@@ -1,0 +1,170 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  IT_ADMIN
+  ADP_ADMIN
+  PRIEST
+}
+
+enum ProfileStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  DRAFT
+}
+
+model User {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  email        String   @unique
+  name         String?
+  password     String
+  role         Role     @default(PRIEST)
+  isActive     Boolean  @default(true)
+  tempPassword Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now())
+  createdBy    String?
+
+  invitation    Invitation?
+  priestProfile PriestProfile?
+  reviewsGiven  ProfileReview[] @relation("ReviewedBy")
+  sessions      Session[]
+  announcements Announcement[]
+}
+
+model Session {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Invitation {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String   @unique
+  token     String   @unique
+  userId    String?  @unique @db.ObjectId
+  sentAt    DateTime @default(now())
+  expiresAt DateTime
+  usedAt    DateTime?
+  sentBy    String
+
+  user User? @relation(fields: [userId], references: [id])
+}
+
+model PriestProfile {
+  id          String        @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String        @unique @db.ObjectId
+  status      ProfileStatus @default(DRAFT)
+  submittedAt DateTime?
+  approvedAt  DateTime?
+  rejectedAt  DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @default(now())
+
+  // Personal Information
+  firstName    String?
+  middleName   String?
+  lastName     String?
+  dateOfBirth  String?
+  placeOfBirth String?
+  nationality  String?
+  diocese      String?
+  phoneNumber  String?
+  photoUrl     String?
+
+  // Ordination
+  dateOfOrdination  String?
+  placeOfOrdination String?
+  ordinationBishop  String?
+  diaconate         String?
+
+  // Academic Formation
+  academicRecords AcademicRecord[]
+
+  // Ministry / Pastoral Assignments
+  assignments PastoralAssignment[]
+
+  // Other Ministry
+  ministries OtherMinistry[]
+
+  // Documents / Notes
+  additionalNotes String?
+
+  user    User            @relation(fields: [userId], references: [id])
+  reviews ProfileReview[]
+}
+
+model AcademicRecord {
+  id          String        @id @default(auto()) @map("_id") @db.ObjectId
+  profileId   String        @db.ObjectId
+  institution String
+  degree      String
+  fieldOfStudy String?
+  startYear   String?
+  endYear     String?
+  country     String?
+  profile     PriestProfile @relation(fields: [profileId], references: [id])
+}
+
+model PastoralAssignment {
+  id        String        @id @default(auto()) @map("_id") @db.ObjectId
+  profileId String        @db.ObjectId
+  parish    String
+  diocese   String?
+  role      String
+  startDate String?
+  endDate   String?
+  isCurrent Boolean       @default(false)
+  profile   PriestProfile @relation(fields: [profileId], references: [id])
+}
+
+model OtherMinistry {
+  id           String        @id @default(auto()) @map("_id") @db.ObjectId
+  profileId    String        @db.ObjectId
+  title        String
+  organization String?
+  description  String?
+  startDate    String?
+  endDate      String?
+  profile      PriestProfile @relation(fields: [profileId], references: [id])
+}
+
+model ProfileReview {
+  id         String        @id @default(auto()) @map("_id") @db.ObjectId
+  profileId  String        @db.ObjectId
+  reviewerId String        @db.ObjectId
+  action     String        // APPROVED | REJECTED
+  notes      String?
+  createdAt  DateTime      @default(now())
+
+  profile  PriestProfile @relation(fields: [profileId], references: [id])
+  reviewer User          @relation("ReviewedBy", fields: [reviewerId], references: [id])
+}
+
+model SystemConfig {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  key       String   @unique
+  value     String
+  updatedAt DateTime @default(now())
+}
+
+model Announcement {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  title     String
+  body      String
+  authorId  String   @db.ObjectId
+  author    User     @relation(fields: [authorId], references: [id])
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+}
