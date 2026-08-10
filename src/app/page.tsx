@@ -50,8 +50,8 @@ export default function Home() {
 
             <p className="max-w-2xl mx-auto text-sm sm:text-base lg:text-lg text-stone-warm mt-4 sm:mt-6 leading-relaxed px-2">
               The centralized digital repository for biographical records, pastoral assignments,
-              academic formation, ecclesiastical status, and necrology — serving the priests
-              of the Metropolitan See of Bamenda.
+              academic formation, ecclesiastical status, and necrology; serving the priests
+              of the Metropolitan Sea of Bamenda.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-6 sm:mt-8">
@@ -169,7 +169,7 @@ export default function Home() {
             <span className="text-gold font-serif italic text-xs sm:text-sm">In Caritate et Veritate</span>
             <Cross size={14} className="sm:w-[16px] sm:h-[16px] text-gold" />
           </div>
-          <p className="text-xs sm:text-sm font-medium text-cream">Association of Diocesan Priests · Metropolitan See of Bamenda</p>
+          <p className="text-xs sm:text-sm font-medium text-cream">Association of Diocesan Priests · Metropolitan Sea of Bamenda</p>
           <p className="text-[10px] sm:text-xs text-cream/50 mt-1.5 sm:mt-2">
             &copy; {new Date().getFullYear()} ADP Clergy Profile System. Sacred &amp; Confidential Ecclesiastical Records.
           </p>
