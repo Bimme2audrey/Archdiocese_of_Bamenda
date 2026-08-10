@@ -13,10 +13,12 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get('status') || ''
     const search = searchParams.get('search') || ''
     const diocese = searchParams.get('diocese') || ''
+    const ecclesiasticalStatus = searchParams.get('ecclesiastical') || ''
 
     const where: any = {}
     if (status && status !== 'ALL') where.status = status
     if (diocese && diocese !== 'ALL') where.diocese = { contains: diocese }
+    if (ecclesiasticalStatus && ecclesiasticalStatus !== 'ALL') where.ecclesiasticalStatus = ecclesiasticalStatus
     if (search) {
       where.OR = [
         { firstName: { contains: search } },

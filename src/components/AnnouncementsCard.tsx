@@ -3,14 +3,17 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { SectionCard, Spinner } from '@/components/ui'
-import { Megaphone, ArrowRight } from 'lucide-react'
-import { formatDate } from '@/lib/utils'
+import { Megaphone, ArrowRight, Pin } from 'lucide-react'
+import { formatDate, announcementCategoryColor } from '@/lib/utils'
 
 interface Announcement {
   id: string
   title: string
   body: string
   active: boolean
+  category: string
+  isPinned: boolean
+  targetAudience: string | null
   createdAt: string
   author: { name: string | null }
 }
@@ -50,7 +53,13 @@ export default function AnnouncementsCard({ role }: { role: string }) {
       ) : (
         <div className="space-y-3">
           {announcements.map((a) => (
-            <div key={a.id} className="rounded-lg border border-sand bg-cream/50 p-3">
+            <div key={a.id} className={`rounded-lg border p-3 ${a.isPinned ? 'bg-gold/5 border-gold/30' : 'border-sand bg-cream/50'}`}>
+              <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                <span className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium ${announcementCategoryColor(a.category)}`}>
+                  {a.category}
+                </span>
+                {a.isPinned && <Pin size={11} className="text-gold" />}
+              </div>
               <p className="font-medium text-sm">{a.title}</p>
               <p className="text-sm text-stone-warm mt-1 line-clamp-2">{a.body}</p>
               <p className="text-xs text-stone-warm mt-2">{formatDate(a.createdAt)}</p>

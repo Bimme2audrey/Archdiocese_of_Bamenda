@@ -30,7 +30,7 @@ interface FormData {
 
 const emptyForm: FormData = {
   firstName: '', middleName: '', lastName: '',
-  dateOfBirth: '', placeOfBirth: '', nationality: '', diocese: '', phoneNumber: '',
+  dateOfBirth: '', placeOfBirth: '', nationality: '', diocese: 'Archdiocese of Bamenda', phoneNumber: '',
   dateOfOrdination: '', placeOfOrdination: '', ordinationBishop: '', diaconate: '',
   additionalNotes: '',
   academicRecords: [{ institution: '', degree: '', fieldOfStudy: '', startYear: '', endYear: '', country: '' }],
@@ -73,7 +73,7 @@ export default function QuestionnaireForm({ role }: { role: string }) {
               setForm({
                 firstName: profile.firstName || '', middleName: profile.middleName || '', lastName: profile.lastName || '',
                 dateOfBirth: profile.dateOfBirth || '', placeOfBirth: profile.placeOfBirth || '', nationality: profile.nationality || '',
-                diocese: profile.diocese || '', phoneNumber: profile.phoneNumber || '',
+                diocese: 'Archdiocese of Bamenda', phoneNumber: profile.phoneNumber || '',
                 dateOfOrdination: profile.dateOfOrdination || '', placeOfOrdination: profile.placeOfOrdination || '',
                 ordinationBishop: profile.ordinationBishop || '', diaconate: profile.diaconate || '',
                 additionalNotes: profile.additionalNotes || '',
@@ -283,7 +283,7 @@ export default function QuestionnaireForm({ role }: { role: string }) {
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1.5">Diocese / Archdiocese</label>
-                <input className="input-base" value={form.diocese} onChange={(e) => updateField('diocese', e.target.value)} />
+                <input className="input-base bg-sand/30 text-stone-warm cursor-not-allowed" value="Archdiocese of Bamenda" readOnly />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">Phone Number</label>

@@ -1,45 +1,49 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import React from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { PageHeader, StatusBadge, Spinner, SectionCard } from '@/components/ui'
-import { ArrowLeft, CheckCircle2, XCircle, GraduationCap, Church, Briefcase, HeartHandshake, Phone, MapPin, CalendarDays, Pencil } from 'lucide-react'
-import { formatDate } from '@/lib/utils'
+import ClergyAvatar from '@/components/ClergyAvatar'
+import { ArrowLeft, CheckCircle2, XCircle, GraduationCap, Church, Briefcase, HeartHandshake, Phone, MapPin, CalendarDays, Pencil, Heart, BookOpen, AlertTriangle, Globe, Shield, FileText } from 'lucide-react'
+import { formatDate, ecclesiasticalStatusLabel, ecclesiasticalStatusColor } from '@/lib/utils'
 
 interface Profile {
-  id: string
-  status: string
-  firstName: string | null
-  middleName: string | null
-  lastName: string | null
-  dateOfBirth: string | null
-  placeOfBirth: string | null
-  nationality: string | null
-  diocese: string | null
-  phoneNumber: string | null
-  dateOfOrdination: string | null
-  placeOfOrdination: string | null
-  ordinationBishop: string | null
-  diaconate: string | null
-  additionalNotes: string | null
-  submittedAt: string | null
-  approvedAt: string | null
-  rejectedAt: string | null
+  id: string; status: string
+  firstName: string | null; middleName: string | null; lastName: string | null
+  dateOfBirth: string | null; placeOfBirth: string | null; nationality: string | null
+  diocese: string | null; phoneNumber: string | null; photoUrl: string | null
+  dateOfOrdination: string | null; placeOfOrdination: string | null
+  ordinationBishop: string | null; diaconate: string | null
+  additionalNotes: string | null; submittedAt: string | null
+  approvedAt: string | null; rejectedAt: string | null
+  ecclesiasticalStatus: string | null; dateOfDeath: string | null
+  restingPlace: string | null; necrologyNotes: string | null
+  emergencyContactName: string | null; emergencyContactPhone: string | null
+  emergencyContactRelationship: string | null
+  baptismDate: string | null; baptismParish: string | null
+  confirmationDate: string | null; confirmationParish: string | null
+  religiousCongregation: string | null; skills: string[]
+  bloodGroup: string | null; allergies: string | null; medicalConditions: string | null
+  nextOfKinName: string | null; nextOfKinPhone: string | null
+  biography: string | null
   user: { name: string | null; email: string; createdAt: string }
   academicRecords: Array<{ id: string; institution: string; degree: string; fieldOfStudy: string | null; startYear: string | null; endYear: string | null; country: string | null }>
   assignments: Array<{ id: string; parish: string; diocese: string | null; role: string; startDate: string | null; endDate: string | null; isCurrent: boolean }>
   ministries: Array<{ id: string; title: string; organization: string | null; description: string | null; startDate: string | null; endDate: string | null }>
+  languages: Array<{ id: string; language: string; spoken: string; written: string }>
+  documents: Array<{ id: string; name: string; type: string; uploadDate: string; fileSize: string }>
   reviews: Array<{ id: string; action: string; notes: string | null; createdAt: string; reviewer: { name: string | null } }>
 }
 
-function InfoItem({ label, value, icon: Icon }: { label: string; value?: string | null; icon?: React.ElementType }) {
+function InfoItem({ label, value, icon: Icon }: { label: string; value?: React.ReactNode | string | null; icon?: React.ElementType }) {
   return (
     <div>
       <p className="text-xs text-stone-warm mb-0.5 flex items-center gap-1">
         {Icon && <Icon size={12} />} {label}
       </p>
-      <p className="font-medium text-sm">{value || '—'}</p>
+      <div className="font-medium text-sm">{value || '—'}</div>
     </div>
   )
 }
@@ -203,6 +207,106 @@ export default function PriestProfileView({ role }: { role: string }) {
           {profile.additionalNotes && (
             <SectionCard title="Additional Notes">
               <p className="text-sm text-stone-warm leading-relaxed whitespace-pre-wrap">{profile.additionalNotes}</p>
+            </SectionCard>
+          )}
+          {/* Ecclesiastical Status & Necrology */}
+          <SectionCard title="Ecclesiastical Status">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <InfoItem label="Status" value={
+                <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${ecclesiasticalStatusColor(profile.ecclesiasticalStatus)}`}>
+                  {ecclesiasticalStatusLabel(profile.ecclesiasticalStatus)}
+                </span>
+              } icon={Shield} />
+              {profile.ecclesiasticalStatus === 'Deceased' && (
+                <>
+                  <InfoItem label="Date of Death" value={profile.dateOfDeath} icon={CalendarDays} />
+                  <InfoItem label="Resting Place" value={profile.restingPlace} icon={MapPin} />
+                </>
+              )}
+            </div>
+            {profile.necrologyNotes && <p className="text-sm text-stone-warm mt-3 italic">"{profile.necrologyNotes}"</p>}
+          </SectionCard>
+
+          {/* Emergency Contact */}
+          {(profile.emergencyContactName || profile.emergencyContactPhone) && (
+            <SectionCard title="Emergency Contact">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <InfoItem label="Contact Name" value={profile.emergencyContactName} icon={Phone} />
+                <InfoItem label="Phone" value={profile.emergencyContactPhone} icon={Phone} />
+                {profile.emergencyContactRelationship && <InfoItem label="Relationship" value={profile.emergencyContactRelationship} icon={Heart} />}
+              </div>
+            </SectionCard>
+          )}
+
+          {/* Sacramental Information */}
+          {(profile.baptismDate || profile.confirmationDate || profile.religiousCongregation) && (
+            <SectionCard title="Sacramental Information">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {profile.baptismDate && <InfoItem label="Baptism Date" value={profile.baptismDate} />}
+                {profile.baptismParish && <InfoItem label="Baptism Parish" value={profile.baptismParish} />}
+                {profile.confirmationDate && <InfoItem label="Confirmation Date" value={profile.confirmationDate} />}
+                {profile.confirmationParish && <InfoItem label="Confirmation Parish" value={profile.confirmationParish} />}
+                {profile.religiousCongregation && <InfoItem label="Religious Congregation" value={profile.religiousCongregation} icon={Church} />}
+              </div>
+            </SectionCard>
+          )}
+
+          {/* Skills & Languages */}
+          <SectionCard title="Skills & Languages">
+            {profile.skills && profile.skills.length > 0 && (
+              <div className="mb-3">
+                <p className="text-xs text-stone-warm mb-2 font-medium">Skills</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {profile.skills.map((s, i) => (<span key={i} className="inline-flex rounded-full bg-gold/10 text-gold border border-gold/20 px-2.5 py-0.5 text-xs font-medium">{s}</span>))}
+                </div>
+              </div>
+            )}
+            {profile.languages && profile.languages.length > 0 && (
+              <div>
+                <p className="text-xs text-stone-warm mb-2 font-medium">Languages</p>
+                <div className="space-y-1.5">
+                  {profile.languages.map((l) => (<div key={l.id} className="flex items-center justify-between text-sm"><span className="font-medium">{l.language}</span><span className="text-xs text-stone-warm">Spoken: {l.spoken} · Written: {l.written}</span></div>))}
+                </div>
+              </div>
+            )}
+            {(!profile.skills || profile.skills.length === 0) && (!profile.languages || profile.languages.length === 0) && (
+              <p className="text-sm text-stone-warm">No skills or languages recorded.</p>
+            )}
+          </SectionCard>
+          {/* Health Information */}
+          {(profile.bloodGroup || profile.allergies || profile.medicalConditions) && (
+            <SectionCard title="Health Information">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {profile.bloodGroup && <InfoItem label="Blood Group" value={profile.bloodGroup} icon={Heart} />}
+                {profile.allergies && <InfoItem label="Allergies" value={profile.allergies} icon={AlertTriangle} />}
+                {profile.medicalConditions && <InfoItem label="Medical Conditions" value={profile.medicalConditions} icon={AlertTriangle} />}
+                {profile.nextOfKinName && <InfoItem label="Next of Kin" value={profile.nextOfKinName} />}
+                {profile.nextOfKinPhone && <InfoItem label="Next of Kin Phone" value={profile.nextOfKinPhone} />}
+              </div>
+            </SectionCard>
+          )}
+
+          {/* Documents */}
+          {profile.documents && profile.documents.length > 0 && (
+            <SectionCard title="Documents">
+              <div className="space-y-2">
+                {profile.documents.map((d) => (
+                  <div key={d.id} className="flex items-center gap-3 p-2.5 rounded-lg border border-sand bg-cream/50">
+                    <FileText size={16} className="text-stone-warm shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">{d.name}</p>
+                      <p className="text-xs text-stone-warm">{d.type} · {d.fileSize} · {d.uploadDate}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </SectionCard>
+          )}
+
+          {/* Biography */}
+          {profile.biography && (
+            <SectionCard title="Biography">
+              <p className="text-sm text-stone-warm leading-relaxed whitespace-pre-wrap">{profile.biography}</p>
             </SectionCard>
           )}
         </div>

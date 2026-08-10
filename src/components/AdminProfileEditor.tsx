@@ -133,7 +133,7 @@ if (loading) return <div className="flex justify-center py-20"><Spinner /></div>
           <div><label className="block text-sm font-medium mb-1.5">Date of Birth</label><input type="date" className="input-base" value={form.dateOfBirth} onChange={(e) => set('dateOfBirth', e.target.value)} /></div>
           <div><label className="block text-sm font-medium mb-1.5">Place of Birth</label><input className="input-base" value={form.placeOfBirth} onChange={(e) => set('placeOfBirth', e.target.value)} /></div>
           <div><label className="block text-sm font-medium mb-1.5">Nationality</label><input className="input-base" value={form.nationality} onChange={(e) => set('nationality', e.target.value)} /></div>
-          <div><label className="block text-sm font-medium mb-1.5">Diocese</label><input className="input-base" value={form.diocese} onChange={(e) => set('diocese', e.target.value)} /></div>
+          <div><label className="block text-sm font-medium mb-1.5">Diocese</label><input className="input-base bg-sand/30 text-stone-warm cursor-not-allowed" value="Archdiocese of Bamenda" readOnly /></div>
           <div><label className="block text-sm font-medium mb-1.5">Phone</label><input className="input-base" value={form.phoneNumber} onChange={(e) => set('phoneNumber', e.target.value)} /></div>
         </div>
       </SectionCard>

@@ -17,6 +17,7 @@ import {
   Megaphone,
   Menu,
   X,
+  Calendar,
 } from 'lucide-react'
 
 interface NavItem {
@@ -29,10 +30,11 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['IT_ADMIN', 'ADP_ADMIN', 'PRIEST'] },
   { label: 'My Profile', href: '/questionnaire', icon: FileText, roles: ['PRIEST'] },
-  { label: 'Invite Priests', href: '/invite', icon: Users, roles: ['IT_ADMIN', 'ADP_ADMIN'] },
-  { label: 'Clergy Records', href: '/priests', icon: UserRound, roles: ['IT_ADMIN', 'ADP_ADMIN'] },
-  { label: 'Reports & Stats', href: '/reports', icon: BarChart3, roles: ['IT_ADMIN', 'ADP_ADMIN'] },
-  { label: 'Announcements', href: '/announcements', icon: Megaphone, roles: ['IT_ADMIN', 'ADP_ADMIN'] },
+  { label: 'Invite Priests', href: '/invite', icon: Users, roles: ['ADP_ADMIN'] },
+  { label: 'Clergy Records', href: '/priests', icon: UserRound, roles: ['ADP_ADMIN'] },
+  { label: 'Reports & Stats', href: '/reports', icon: BarChart3, roles: ['ADP_ADMIN'] },
+  { label: 'Calendar', href: '/calendar', icon: Calendar, roles: ['ADP_ADMIN'] },
+  { label: 'Announcements', href: '/announcements', icon: Megaphone, roles: ['ADP_ADMIN'] },
   { label: 'Manage Admins', href: '/admin', icon: ShieldCheck, roles: ['IT_ADMIN'] },
 ]
 
@@ -49,6 +51,7 @@ function resolveHref(item: NavItem, role: string): string {
     case 'Invite Priests': return role === 'IT_ADMIN' ? '/it/invite' : '/adp/invite'
     case 'Clergy Records': return role === 'IT_ADMIN' ? '/it/priests' : '/adp/priests'
     case 'Reports & Stats': return role === 'IT_ADMIN' ? '/it/reports' : '/adp/reports'
+    case 'Calendar': return role === 'IT_ADMIN' ? '/it/calendar' : '/adp/calendar'
     case 'Announcements': return role === 'IT_ADMIN' ? '/it/announcements' : '/adp/announcements'
     case 'Manage Admins': return '/it/admin'
     default: return item.href

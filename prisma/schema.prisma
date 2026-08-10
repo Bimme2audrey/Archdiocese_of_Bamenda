@@ -100,6 +100,41 @@ model PriestProfile {
   // Documents / Notes
   additionalNotes String?
 
+  // Ecclesiastical Status & Necrology
+  ecclesiasticalStatus String? @default("Active")
+  dateOfDeath           String?
+  restingPlace          String?
+  necrologyNotes        String?
+
+  // Emergency Contact
+  emergencyContactName         String?
+  emergencyContactPhone        String?
+  emergencyContactRelationship String?
+
+  // Sacramental Information
+  baptismDate          String?
+  baptismParish        String?
+  confirmationDate     String?
+  confirmationParish   String?
+  religiousCongregation String?
+
+  // Skills & Languages
+  skills    String[]
+  languages LanguageProficiency[]
+
+  // Health Information (Restricted)
+  bloodGroup        String?
+  allergies         String?
+  medicalConditions String?
+  nextOfKinName     String?
+  nextOfKinPhone    String?
+
+  // Documents List
+  documents ClergyDocument[]
+
+  // Generated Biography
+  biography String?
+
   user    User            @relation(fields: [userId], references: [id])
   reviews ProfileReview[]
 }
@@ -158,13 +193,35 @@ model SystemConfig {
   updatedAt DateTime @default(now())
 }
 
+model LanguageProficiency {
+  id        String        @id @default(auto()) @map("_id") @db.ObjectId
+  profileId String        @db.ObjectId
+  language  String
+  spoken    String        // Basic | Conversational | Fluent | Native
+  written   String        // Basic | Conversational | Fluent | Native
+  profile   PriestProfile @relation(fields: [profileId], references: [id])
+}
+
+model ClergyDocument {
+  id         String        @id @default(auto()) @map("_id") @db.ObjectId
+  profileId  String        @db.ObjectId
+  name       String
+  type       String        // Ordination Certificate | Academic Certificate | ID Document | CV | Other
+  uploadDate String
+  fileSize   String
+  profile    PriestProfile @relation(fields: [profileId], references: [id])
+}
+
 model Announcement {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  title     String
-  body      String
-  authorId  String   @db.ObjectId
-  author    User     @relation(fields: [authorId], references: [id])
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  title          String
+  body           String
+  category       String   @default("Chancery Notice") // Chancery Notice | ADP Executive | Urgent | Liturgical | Assembly
+  isPinned       Boolean  @default(false)
+  targetAudience String?  // All Clergy & Deans | ADP Executive | Public Directory
+  authorId       String   @db.ObjectId
+  author         User     @relation(fields: [authorId], references: [id])
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now())
 }

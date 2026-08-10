@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
 
     const announcements = await prisma.announcement.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ isPinned: 'desc' }, { createdAt: 'desc' }],
       include: { author: { select: { name: true } } },
     })
 
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
-    const { title, body, active } = await req.json()
+    const { title, body, active, category, isPinned, targetAudience } = await req.json()
     if (!title || !body) {
       return NextResponse.json({ error: 'Title and message are required' }, { status: 400 })
     }
@@ -41,6 +41,9 @@ export async function POST(req: NextRequest) {
         body,
         authorId: user.id,
         active: active !== false,
+        category: category || 'Chancery Notice',
+        isPinned: isPinned || false,
+        targetAudience: targetAudience || null,
       },
       include: { author: { select: { name: true } } },
     })
