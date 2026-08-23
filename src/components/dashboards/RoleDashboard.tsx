@@ -62,7 +62,7 @@ export default async function RoleDashboard({ user }: { user: { id: string; role
   // ==================== ADP ADMIN: Rich Clergy Dashboard ====================
   if (user.role === 'ADP_ADMIN') {
     const now = new Date(); const currentMonth = now.getMonth(); const currentYear = now.getFullYear()
-    const allProfiles = await prisma.priestProfile.findMany({ include: { user: { select: { name: true, email: true } }, assignments: true } })
+    const allProfiles = await prisma.priestProfile.findMany({ orderBy: { dateOfOrdination: 'asc' }, include: { user: { select: { name: true, email: true } }, assignments: true } })
     const active = allProfiles.filter((p: any) => p.ecclesiasticalStatus !== 'Deceased')
     const deceased = allProfiles.filter((p: any) => p.ecclesiasticalStatus === 'Deceased')
     const agesArr = active.map((p: any) => calculateAge(p.dateOfBirth)).filter((a: number) => a > 0)

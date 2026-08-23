@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser, getUser, generateToken, generateTempPassword, hashPassword } from '@/lib/auth'
+import { getUser, generateToken, generateTempPassword, hashPassword } from '@/lib/auth'
 import { sendEmail, invitationEmailTemplate } from '@/lib/email'
 
 export async function POST(req: NextRequest) {
@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
-    const { name, email } = await req.json()
+    const { name, email, sendEmail: shouldSendEmail = true } = await req.json()
     if (!email) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 })
     }
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     })
 
     // Create a draft profile for them
-    await prisma.priestProfile.create({
+    const priestProfile = await prisma.priestProfile.create({
       data: { userId: createdUser.id, status: 'DRAFT' },
     })
 
@@ -59,23 +59,32 @@ export async function POST(req: NextRequest) {
 
     const origin = req.nextUrl.origin || process.env.NEXTAUTH_URL || 'http://localhost:3000'
     const inviteUrl = `${origin}/register?token=${inviteToken}`
-    const fullName = name || normalizedEmail.split('@')[0]
+    const questionnaireUrl = `${origin}/api/auth/questionnaire-link?token=${inviteToken}&email=${encodeURIComponent(normalizedEmail)}`
 
-    await sendEmail({
-      to: normalizedEmail,
-      subject: 'Invitation: Complete Your ADP Clergy Profile',
-      html: invitationEmailTemplate({
-        name: fullName,
-        email: normalizedEmail,
-        tempPassword,
-        inviteUrl,
-      }),
-    })
+    // Only send email if the admin chose to
+    if (shouldSendEmail !== false) {
+      const fullName = name || normalizedEmail.split('@')[0]
+      await sendEmail({
+        to: normalizedEmail,
+        subject: 'Invitation: Complete Your ADP Clergy Profile',
+        html: invitationEmailTemplate({
+          name: fullName,
+          email: normalizedEmail,
+          tempPassword,
+          inviteUrl,
+          questionnaireUrl,
+        }),
+      })
+    }
 
     return NextResponse.json({
       success: true,
+      emailSent: shouldSendEmail !== false,
       invitation: { id: invitation.id, email: normalizedEmail, expiresAt },
-      tempPassword, // returned so admins can view it in dev if email fails
+      tempPassword,
+      userId: createdUser.id,
+      profileId: priestProfile.id,
+      inviteUrl,    // so admin can copy/paste or share it manually
     })
   } catch (error) {
     console.error('Invite error:', error)

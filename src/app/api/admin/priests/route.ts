@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
 
     const profiles = await prisma.priestProfile.findMany({
       where,
-      orderBy: { updatedAt: 'desc' },
+      orderBy: { dateOfOrdination: 'asc' },
       include: {
         user: { select: { name: true, email: true } },
         _count: { select: { academicRecords: true, assignments: true } },
