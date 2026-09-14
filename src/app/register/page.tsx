@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
 import Link from 'next/link'
 import { Logo, Spinner } from '@/components/ui'
+import PasswordInput from '@/components/PasswordInput'
 import { KeyRound, Mail, User } from 'lucide-react'
 
 function RegisterForm() {
@@ -99,8 +100,14 @@ function RegisterForm() {
           <div>
             <label className="block text-sm font-medium mb-1.5">Temporary Passcode</label>
             <div className="relative">
-              <KeyRound size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-warm" />
-              <input type="text" required className="input-base pl-9 font-mono" placeholder="From your invitation email" value={form.tempPassword} onChange={(e) => update('tempPassword', e.target.value)} />
+              <PasswordInput
+                leadingIcon={<KeyRound size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-warm" />}
+                required
+                className="font-mono"
+                placeholder="From your invitation email"
+                value={form.tempPassword}
+                onChange={(e) => update('tempPassword', e.target.value)}
+              />
             </div>
             <p className="text-xs text-stone-warm mt-1">Sent to you via the invitation from ADP administration.</p>
           </div>
@@ -108,11 +115,11 @@ function RegisterForm() {
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1.5">New Password</label>
-              <input type="password" required className="input-base" placeholder="Min 8 characters" value={form.newPassword} onChange={(e) => update('newPassword', e.target.value)} />
+              <PasswordInput required placeholder="Min 8 characters" value={form.newPassword} onChange={(e) => update('newPassword', e.target.value)} />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1.5">Confirm Password</label>
-              <input type="password" required className="input-base" placeholder="Repeat password" value={form.confirmPassword} onChange={(e) => update('confirmPassword', e.target.value)} />
+              <PasswordInput required placeholder="Repeat password" value={form.confirmPassword} onChange={(e) => update('confirmPassword', e.target.value)} />
             </div>
           </div>
 

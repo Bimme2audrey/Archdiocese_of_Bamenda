@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Logo, Spinner } from '@/components/ui'
+import PasswordInput from '@/components/PasswordInput'
 import { Lock, Mail, ShieldCheck, Award, Church } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -103,17 +104,13 @@ export default function LoginForm({ initialRole = '' }: { initialRole?: string }
 
         <div>
           <label className="block text-sm font-medium mb-1.5">Password</label>
-          <div className="relative">
-            <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-warm" />
-            <input
-              type="password"
-              required
-              className="input-base pl-9"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
+          <PasswordInput
+            leadingIcon={<Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-warm" />}
+            required
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
         </div>
 
         {error && (

@@ -83,8 +83,8 @@ export function invitationEmailTemplate({
     <body>
       <div class="container">
         <div class="header">
-          <h1>✝ Archdiocese of Diocese of Priests</h1>
-          <p>Clergy Profile System — Invitation</p>
+          <h1>✝ Archdiocese of Bamenda ADP</h1>
+          <p>Clergy Profile System Invitation</p>
         </div>
         <div class="body">
           <p>Dear <strong>${name}</strong>,</p>
@@ -92,12 +92,12 @@ export function invitationEmailTemplate({
 
           <!-- One-click questionnaire -->
           <div class="quick-box">
-            <p><strong>📋 Easiest way — Click below to go straight to your questionnaire:</strong></p>
+            <p><strong>Click below to go straight to your questionnaire:</strong></p>
             <a href="${questionnaireUrl}" class="quick-button">Start My Questionnaire →</a>
-            <p style="font-size: 12px; color: #6b7280; margin-top: 8px;">One click — no registration needed. You will be asked to set your password later.</p>
+            <p style="font-size: 12px; color: #6b7280; margin-top: 8px;">You will be asked to set your password later.</p>
           </div>
 
-          <div class="divider">— or use your login credentials below —</div>
+          <div class="divider">Use your login credentials below</div>
 
           <div class="credentials">
             <p><strong>Email:</strong> ${email}</p>

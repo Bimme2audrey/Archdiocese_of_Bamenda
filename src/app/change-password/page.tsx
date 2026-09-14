@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Logo, Spinner } from '@/components/ui'
+import PasswordInput from '@/components/PasswordInput'
 import { KeyRound, Lock } from 'lucide-react'
 
 export default function ChangePasswordPage() {
@@ -59,40 +60,31 @@ export default function ChangePasswordPage() {
         <form onSubmit={handleSubmit} className="card card-shadow p-8 space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1.5">Temporary Passcode</label>
-            <div className="relative">
-              <KeyRound size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-warm" />
-              <input
-                type="password"
-                required
-                className="input-base pl-9 font-mono"
-                placeholder="Your temporary passcode"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-              />
-            </div>
+            <PasswordInput
+              leadingIcon={<KeyRound size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-warm" />}
+              required
+              className="font-mono"
+              placeholder="Your temporary passcode"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+            />
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-1.5">New Password</label>
-            <div className="relative">
-              <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-warm" />
-              <input
-                type="password"
-                required
-                className="input-base pl-9"
-                placeholder="Min 8 characters"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-              />
-            </div>
+            <PasswordInput
+              leadingIcon={<Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-warm" />}
+              required
+              placeholder="Min 8 characters"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+            />
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-1.5">Confirm New Password</label>
-            <input
-              type="password"
+            <PasswordInput
               required
-              className="input-base"
               placeholder="Repeat password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
