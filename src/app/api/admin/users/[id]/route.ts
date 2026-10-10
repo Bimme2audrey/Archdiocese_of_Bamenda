@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser, getUser } from '@/lib/auth'
+import { getUser } from '@/lib/auth'
 import { hashPassword, generateTempPassword } from '@/lib/auth'
 
 interface RouteContext {
@@ -10,7 +10,7 @@ interface RouteContext {
 export async function POST(req: NextRequest, context: RouteContext) {
   try {
     const user = await getUser(req)
-    if (!user || user.role !== 'IT_ADMIN') {
+    if (!user || (user.role !== 'IT_ADMIN' && user.role !== 'ADP_ADMIN')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
@@ -21,16 +21,21 @@ export async function POST(req: NextRequest, context: RouteContext) {
     if (!target) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
     if (action === 'RESET_PASSWORD') {
+      if (user.role === 'ADP_ADMIN' && target.role !== 'PRIEST') {
+        return NextResponse.json({ error: 'ADP admins can reset priest accounts only' }, { status: 403 })
+      }
       const tempPassword = generateTempPassword()
       const hashed = await hashPassword(tempPassword)
-      await prisma.user.update({
-        where: { id },
-        data: { password: hashed, tempPassword: true },
-      })
+      await prisma.$transaction([
+        prisma.user.update({ where: { id }, data: { password: hashed, tempPassword: true } }),
+        prisma.session.deleteMany({ where: { userId: id } }),
+        prisma.passwordResetToken.deleteMany({ where: { userId: id } }),
+      ])
       return NextResponse.json({ success: true, tempPassword })
     }
 
     if (action === 'TOGGLE_ACTIVE') {
+      if (user.role !== 'IT_ADMIN') return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
       const updated = await prisma.user.update({
         where: { id },
         data: { isActive: !target.isActive },
@@ -39,6 +44,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
     }
 
     if (action === 'SET_ROLE') {
+      if (user.role !== 'IT_ADMIN') return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
       const { role } = await req.json()
       if (!['ADP_ADMIN', 'PRIEST', 'IT_ADMIN'].includes(role)) {
         return NextResponse.json({ error: 'Invalid role' }, { status: 400 })

@@ -63,7 +63,7 @@ function RegisterForm() {
         setLoading(false)
         return
       }
-      router.push('/questionnaire')
+      router.push('/priest/questionnaire')
       router.refresh()
     } catch {
       setError('Network error. Please try again.')
@@ -90,10 +90,10 @@ function RegisterForm() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1.5">Email Address</label>
+            <label className="block text-sm font-medium mb-1.5">Email Address <span className="font-normal text-stone-warm">(optional for WhatsApp invitations)</span></label>
             <div className="relative">
               <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-warm" />
-              <input type="email" required className="input-base pl-9" placeholder="you@archdiocese.org" value={form.email} onChange={(e) => update('email', e.target.value)} />
+              <input type="email" className="input-base pl-9" placeholder="you@archdiocese.org" value={form.email} onChange={(e) => update('email', e.target.value)} />
             </div>
           </div>
 

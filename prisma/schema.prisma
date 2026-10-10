@@ -48,13 +48,25 @@ model Session {
   user      User     @relation(fields: [userId], references: [id])
 }
 
+model PasswordResetToken {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String    @db.ObjectId
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
 model Invitation {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  email     String   @unique
+  email     String?  @unique
   token     String   @unique
   userId    String?  @unique @db.ObjectId
   sentAt    DateTime @default(now())
   expiresAt DateTime
+  deliveryMethod String? @default("EMAIL")
+  emailSentAt DateTime?
+  whatsappSentAt DateTime?
   usedAt    DateTime?
   sentBy    String
 
@@ -142,6 +154,7 @@ model PriestProfile {
 model AcademicRecord {
   id          String        @id @default(auto()) @map("_id") @db.ObjectId
   profileId   String        @db.ObjectId
+  level       String?
   institution String
   degree      String
   fieldOfStudy String?

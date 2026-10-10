@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { PageHeader, StatusBadge, Spinner } from '@/components/ui'
 import { ChevronLeft, ChevronRight, Save, Wifi, WifiOff, CheckCircle2, Send, GraduationCap, Briefcase, HeartHandshake, Plus, Trash2, UserRound } from 'lucide-react'
 import { saveFormOffline, loadFormOffline, clearFormOffline } from '@/lib/offline'
+import ClergyAvatar from '@/components/ClergyAvatar'
 
 const steps = [
   { key: 'personal', label: 'Personal Info', icon: UserRound },
@@ -14,13 +15,14 @@ const steps = [
   { key: 'review', label: 'Review & Submit', icon: Send },
 ]
 
-interface AcademicRecord { institution: string; degree: string; fieldOfStudy: string; startYear: string; endYear: string; country: string }
+interface AcademicRecord { level: string; institution: string; degree: string; fieldOfStudy: string; startYear: string; endYear: string; country: string }
 interface Assignment { parish: string; diocese: string; role: string; startDate: string; endDate: string; isCurrent: boolean }
 interface Ministry { title: string; organization: string; description: string; startDate: string; endDate: string }
 
 interface FormData {
   firstName: string; middleName: string; lastName: string
   dateOfBirth: string; placeOfBirth: string; nationality: string; diocese: string; phoneNumber: string
+  photoUrl: string; baptismDate: string; baptismParish: string; confirmationDate: string; confirmationParish: string; religiousCongregation: string
   dateOfOrdination: string; placeOfOrdination: string; ordinationBishop: string; diaconate: string
   additionalNotes: string
   academicRecords: AcademicRecord[]
@@ -31,9 +33,10 @@ interface FormData {
 const emptyForm: FormData = {
   firstName: '', middleName: '', lastName: '',
   dateOfBirth: '', placeOfBirth: '', nationality: '', diocese: 'Archdiocese of Bamenda', phoneNumber: '',
+  photoUrl: '', baptismDate: '', baptismParish: '', confirmationDate: '', confirmationParish: '', religiousCongregation: '',
   dateOfOrdination: '', placeOfOrdination: '', ordinationBishop: '', diaconate: '',
   additionalNotes: '',
-  academicRecords: [{ institution: '', degree: '', fieldOfStudy: '', startYear: '', endYear: '', country: '' }],
+  academicRecords: [{ level: '', institution: '', degree: '', fieldOfStudy: '', startYear: '', endYear: '', country: '' }],
   assignments: [{ parish: '', diocese: '', role: '', startDate: '', endDate: '', isCurrent: false }],
   ministries: [{ title: '', organization: '', description: '', startDate: '', endDate: '' }],
 }
@@ -74,10 +77,13 @@ export default function QuestionnaireForm({ role }: { role: string }) {
                 firstName: profile.firstName || '', middleName: profile.middleName || '', lastName: profile.lastName || '',
                 dateOfBirth: profile.dateOfBirth || '', placeOfBirth: profile.placeOfBirth || '', nationality: profile.nationality || '',
                 diocese: 'Archdiocese of Bamenda', phoneNumber: profile.phoneNumber || '',
+                photoUrl: profile.photoUrl || '', baptismDate: profile.baptismDate || '', baptismParish: profile.baptismParish || '',
+                confirmationDate: profile.confirmationDate || '', confirmationParish: profile.confirmationParish || '',
+                religiousCongregation: profile.religiousCongregation || '',
                 dateOfOrdination: profile.dateOfOrdination || '', placeOfOrdination: profile.placeOfOrdination || '',
                 ordinationBishop: profile.ordinationBishop || '', diaconate: profile.diaconate || '',
                 additionalNotes: profile.additionalNotes || '',
-                academicRecords: profile.academicRecords?.length ? profile.academicRecords.map((r: any) => ({ institution: r.institution, degree: r.degree, fieldOfStudy: r.fieldOfStudy || '', startYear: r.startYear || '', endYear: r.endYear || '', country: r.country || '' })) : [{ institution: '', degree: '', fieldOfStudy: '', startYear: '', endYear: '', country: '' }],
+                academicRecords: profile.academicRecords?.length ? profile.academicRecords.map((r: any) => ({ level: r.level || '', institution: r.institution, degree: r.degree, fieldOfStudy: r.fieldOfStudy || '', startYear: r.startYear || '', endYear: r.endYear || '', country: r.country || '' })) : [{ level: '', institution: '', degree: '', fieldOfStudy: '', startYear: '', endYear: '', country: '' }],
                 assignments: profile.assignments?.length ? profile.assignments.map((a: any) => ({ parish: a.parish, diocese: a.diocese || '', role: a.role, startDate: a.startDate || '', endDate: a.endDate || '', isCurrent: a.isCurrent })) : [{ parish: '', diocese: '', role: '', startDate: '', endDate: '', isCurrent: false }],
                 ministries: profile.ministries?.length ? profile.ministries.map((m: any) => ({ title: m.title, organization: m.organization || '', description: m.description || '', startDate: m.startDate || '', endDate: m.endDate || '' })) : [{ title: '', organization: '', description: '', startDate: '', endDate: '' }],
               })
@@ -101,6 +107,35 @@ export default function QuestionnaireForm({ role }: { role: string }) {
     setForm((f) => ({ ...f, [field]: value }))
   }
 
+  function handlePhotoChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/') || file.size > 5 * 1024 * 1024) {
+      setMessage({ type: 'error', text: 'Choose an image smaller than 5 MB.' })
+      event.target.value = ''
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      const image = new Image()
+      image.onload = () => {
+        const scale = Math.min(1, 512 / Math.max(image.width, image.height))
+        const canvas = document.createElement('canvas')
+        canvas.width = Math.round(image.width * scale)
+        canvas.height = Math.round(image.height * scale)
+        const context = canvas.getContext('2d')
+        if (context) {
+          context.drawImage(image, 0, 0, canvas.width, canvas.height)
+          updateField('photoUrl', canvas.toDataURL('image/jpeg', 0.8))
+        }
+      }
+      image.src = String(reader.result)
+    }
+    reader.readAsDataURL(file)
+    event.target.value = ''
+  }
+
   function updateArray<K extends 'academicRecords' | 'assignments' | 'ministries'>(key: K, index: number, patch: Partial<FormData[K][number]>) {
     setForm((f) => {
       const arr = [...(f[key] as any[])]
@@ -112,7 +147,7 @@ export default function QuestionnaireForm({ role }: { role: string }) {
   function addRow(key: 'academicRecords' | 'assignments' | 'ministries') {
     setForm((f) => {
       const row =
-        key === 'academicRecords' ? { institution: '', degree: '', fieldOfStudy: '', startYear: '', endYear: '', country: '' }
+        key === 'academicRecords' ? { level: '', institution: '', degree: '', fieldOfStudy: '', startYear: '', endYear: '', country: '' }
         : key === 'assignments' ? { parish: '', diocese: '', role: '', startDate: '', endDate: '', isCurrent: false }
         : { title: '', organization: '', description: '', startDate: '', endDate: '' }
       return { ...f, [key]: [...(f[key] as any[]), row] }
@@ -252,6 +287,16 @@ export default function QuestionnaireForm({ role }: { role: string }) {
         {step === 0 && (
           <div className="space-y-5">
             <p className="section-title">Personal Information</p>
+            <div className="flex items-center gap-4">
+              <ClergyAvatar firstName={form.firstName} lastName={form.lastName} photoUrl={form.photoUrl} size="lg" />
+              <div className="space-y-2">
+                <label className="btn-secondary cursor-pointer">
+                  <UserRound size={15} /> {form.photoUrl ? 'Change profile photo' : 'Upload profile photo'}
+                  <input type="file" accept="image/*" className="sr-only" onChange={handlePhotoChange} />
+                </label>
+                <p className="text-xs text-stone-warm">Image is resized before it is saved.</p>
+              </div>
+            </div>
             <div className="grid sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1.5">First Name *</label>
@@ -288,6 +333,31 @@ export default function QuestionnaireForm({ role }: { role: string }) {
               <div>
                 <label className="block text-sm font-medium mb-1.5">Phone Number</label>
                 <input className="input-base" value={form.phoneNumber} onChange={(e) => updateField('phoneNumber', e.target.value)} />
+              </div>
+            </div>
+            <div className="border-t border-sand pt-5 space-y-4">
+              <p className="text-sm font-semibold">Sacramental Information</p>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Baptism Date</label>
+                  <input type="date" className="input-base" value={form.baptismDate} onChange={(e) => updateField('baptismDate', e.target.value)} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Baptism Parish</label>
+                  <input className="input-base" value={form.baptismParish} onChange={(e) => updateField('baptismParish', e.target.value)} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Confirmation Date</label>
+                  <input type="date" className="input-base" value={form.confirmationDate} onChange={(e) => updateField('confirmationDate', e.target.value)} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Confirmation Parish</label>
+                  <input className="input-base" value={form.confirmationParish} onChange={(e) => updateField('confirmationParish', e.target.value)} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-sm font-medium mb-1.5">Religious Congregation, if applicable</label>
+                  <input className="input-base" value={form.religiousCongregation} onChange={(e) => updateField('religiousCongregation', e.target.value)} />
+                </div>
               </div>
             </div>
           </div>
@@ -329,6 +399,16 @@ export default function QuestionnaireForm({ role }: { role: string }) {
                   <button type="button" onClick={() => removeRow('academicRecords', i)} className="text-red-500 hover:text-red-700"><Trash2 size={15} /></button>
                 </div>
                 <div className="grid sm:grid-cols-2 gap-3">
+                  <select className="input-base" value={r.level} onChange={(e) => updateArray('academicRecords', i, { level: e.target.value })}>
+                    <option value="">Education stage</option>
+                    <option value="PRIMARY">Primary school</option>
+                    <option value="SECONDARY">Secondary school</option>
+                    <option value="PHILOSOPHY">Philosophy</option>
+                    <option value="THEOLOGY">Theology</option>
+                    <option value="SEMINARY">Seminary / formation</option>
+                    <option value="UNIVERSITY">University / college</option>
+                    <option value="OTHER">Other</option>
+                  </select>
                   <input className="input-base" placeholder="Institution / Seminary" value={r.institution} onChange={(e) => updateArray('academicRecords', i, { institution: e.target.value })} />
                   <input className="input-base" placeholder="Degree / Diploma" value={r.degree} onChange={(e) => updateArray('academicRecords', i, { degree: e.target.value })} />
                   <input className="input-base" placeholder="Field of Study" value={r.fieldOfStudy} onChange={(e) => updateArray('academicRecords', i, { fieldOfStudy: e.target.value })} />

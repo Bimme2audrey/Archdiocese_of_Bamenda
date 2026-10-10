@@ -25,6 +25,9 @@ export async function sendEmail({ to, subject, html }: EmailOptions) {
   const transporter = getTransporter()
 
   if (!transporter) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('SMTP must be configured before email can be sent in production')
+    }
     // Log to console in dev when SMTP not configured
     console.log('\n📧 EMAIL (Console Mode - Configure SMTP to send real emails)')
     console.log(`To: ${to}`)
@@ -42,6 +45,27 @@ export async function sendEmail({ to, subject, html }: EmailOptions) {
   })
 
   return { success: true, preview: false }
+}
+
+export function passwordResetEmailTemplate({ name, resetUrl }: { name: string; resetUrl: string }) {
+  const safeName = (name || 'Priest').replace(/[&<>"']/g, (character) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[character] || character)
+  return `
+    <!doctype html>
+    <html>
+      <body style="font-family: Georgia, serif; background: #faf6f1; color: #2d2a26; padding: 24px;">
+        <main style="max-width: 560px; margin: 0 auto; background: #fff; padding: 28px; border: 1px solid #efe6d8; border-radius: 8px;">
+          <h1 style="color: #6e1423; font-size: 22px;">ADP Clergy Profile System</h1>
+          <p>Dear ${safeName},</p>
+          <p>We received a request to reset your password. Use the button below within 30 minutes.</p>
+          <p><a href="${resetUrl}" style="display: inline-block; padding: 12px 20px; background: #6e1423; color: #fff; text-decoration: none; border-radius: 6px;">Reset password</a></p>
+          <p>If you did not request this, you can ignore this message. Your password will not change.</p>
+          <p style="font-size: 12px; color: #8a8578;">For your security, this link can only be used once.</p>
+        </main>
+      </body>
+    </html>
+  `
 }
 
 export function invitationEmailTemplate({

@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { hashPassword, verifyPassword, createSession } from '@/lib/auth'
+import { hashPassword, verifyPassword, createSession, getRoleCookie } from '@/lib/auth'
 
 export async function POST(req: NextRequest) {
   try {
     const { token, email, tempPassword, newPassword, name } = await req.json()
 
-    if (!token || !email || !tempPassword || !newPassword) {
-      return NextResponse.json({ error: 'All fields are required' }, { status: 400 })
+    if (!token || !tempPassword || !newPassword) {
+      return NextResponse.json({ error: 'Invitation, temporary passcode, and new password are required' }, { status: 400 })
     }
     if (newPassword.length < 8) {
       return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 })
@@ -27,7 +27,8 @@ export async function POST(req: NextRequest) {
     if (invitation.usedAt) {
       return NextResponse.json({ error: 'This invitation has already been used.' }, { status: 400 })
     }
-    if (invitation.email.toLowerCase() !== email.toLowerCase()) {
+    const normalizedEmail = typeof email === 'string' ? email.toLowerCase().trim() : ''
+    if (normalizedEmail && invitation.email && !invitation.email.startsWith('whatsapp-') && invitation.email.toLowerCase() !== normalizedEmail) {
       return NextResponse.json({ error: 'Email does not match this invitation' }, { status: 400 })
     }
     if (!invitation.user) {
@@ -68,13 +69,15 @@ export async function POST(req: NextRequest) {
       success: true,
       user: { id: user.id, name: user.name, email: user.email, role: user.role },
     })
-    response.cookies.set('session_token', sessionToken, {
+    const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'lax' as const,
       maxAge: 60 * 60 * 24 * 7,
       path: '/',
-    })
+    }
+    response.cookies.set('session_token', sessionToken, cookieOptions)
+    response.cookies.set(getRoleCookie(user.role), sessionToken, cookieOptions)
     return response
   } catch (error) {
     console.error('Register error:', error)

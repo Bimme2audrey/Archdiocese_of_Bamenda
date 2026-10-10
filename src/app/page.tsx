@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Church, ShieldCheck, Database, CalendarClock, Users, Award, BookOpen, ChevronRight, MapPin, Phone, Mail, Cross } from "lucide-react";
+import { Church, ShieldCheck, Database, CalendarClock, Users, BookOpen, ChevronRight, MapPin, Phone, Mail, Cross } from "lucide-react";
 
 export default function Home() {
   return (
@@ -93,29 +93,15 @@ export default function Home() {
         <section className="bg-cream/50 border-y border-sand/50">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-20">
             <div className="text-center mb-8 sm:mb-12">
-              <p className="text-[10px] sm:text-xs font-bold text-gold uppercase tracking-widest mb-2 sm:mb-3">Secure Access Portals</p>
-              <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-ink px-2">Role-Based Entry Points</h2>
+              <p className="text-[10px] sm:text-xs font-bold text-gold uppercase tracking-widest mb-2 sm:mb-3">Priest Portal</p>
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-ink px-2">Clergy Sign In</h2>
               <p className="text-sm sm:text-base text-stone-warm mt-2 max-w-xl mx-auto px-2">
-                Each role accesses a dedicated dashboard with permissions tailored to their responsibilities.
+                Sign in to maintain your personal clergy record.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
+            <div className="grid grid-cols-1 max-w-md mx-auto gap-4 sm:gap-5">
               {[
-                {
-                  icon: ShieldCheck, title: "IT Administrator",
-                  desc: "System-level account management, credential resets, and access control. No access to clergy records.",
-                  href: "/admin-login",
-                  border: "border-l-burgundy", bg: "bg-burgundy/5",
-                  iconBg: "bg-burgundy text-gold-light",
-                },
-                {
-                  icon: Award, title: "ADP Admin (Chancery)",
-                  desc: "Full clergy management — invite priests, review profiles, approve records, generate reports, manage calendar.",
-                  href: "/clergy-login",
-                  border: "border-l-gold", bg: "bg-gold/5",
-                  iconBg: "bg-gold text-burgundy",
-                },
                 {
                   icon: Users, title: "Priest Portal",
                   desc: "Complete your personal dossier, update pastoral assignments, academic records, and ministry history.",

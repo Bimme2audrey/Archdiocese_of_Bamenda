@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { createSession } from '@/lib/auth'
+import { createSession, getRoleCookie } from '@/lib/auth'
 
-/**
- * Magic link that lets a priest skip the registration page and go straight
- * to their questionnaire.  The invite token + email are validated server-side
- * and, if valid, a server-side session cookie is set before redirecting.
- */
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
@@ -36,7 +31,7 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    if (invitation.email.toLowerCase() !== email.toLowerCase()) {
+    if (invitation.email && invitation.email.toLowerCase() !== email.toLowerCase()) {
       return NextResponse.redirect(
         new URL('/login?error=mismatch', req.url)
       )
@@ -63,13 +58,15 @@ export async function GET(req: NextRequest) {
     const response = NextResponse.redirect(redirectUrl)
 
     // Set the session cookie (same as the regular login flow)
-    response.cookies.set('session_token', sessionToken, {
+    const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'lax' as const,
       maxAge: 60 * 60 * 24 * 7,
       path: '/',
-    })
+    }
+    response.cookies.set('session_token', sessionToken, cookieOptions)
+    response.cookies.set(getRoleCookie(invitation.user.role), sessionToken, cookieOptions)
 
     return response
   } catch (error) {

@@ -4,13 +4,25 @@ import { verifyPassword, createSession, getRoleCookie } from '@/lib/auth'
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, password } = await req.json()
+    const { email, phoneNumber, password } = await req.json()
+    const identifier = typeof email === 'string' ? email.trim() : ''
+    const normalizedEmail = identifier.includes('@') ? identifier.toLowerCase() : ''
+    const normalizedPhone = typeof phoneNumber === 'string'
+      ? phoneNumber.replace(/\D/g, '')
+      : normalizedEmail ? '' : identifier.replace(/\D/g, '')
 
-    if (!email || !password) {
-      return NextResponse.json({ error: 'Email and password required' }, { status: 400 })
+    if ((!normalizedEmail && !normalizedPhone) || !password) {
+      return NextResponse.json({ error: 'Email or WhatsApp number and password required' }, { status: 400 })
     }
 
-    const user = await prisma.user.findUnique({ where: { email: email.toLowerCase().trim() } })
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          ...(normalizedEmail ? [{ email: normalizedEmail }] : []),
+          ...(normalizedPhone ? [{ priestProfile: { phoneNumber: normalizedPhone } }] : []),
+        ],
+      },
+    })
 
     if (!user || !user.isActive) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })

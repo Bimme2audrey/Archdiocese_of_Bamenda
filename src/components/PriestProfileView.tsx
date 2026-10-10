@@ -6,14 +6,15 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { PageHeader, StatusBadge, Spinner, SectionCard } from '@/components/ui'
 import ClergyAvatar from '@/components/ClergyAvatar'
-import { ArrowLeft, CheckCircle2, XCircle, GraduationCap, Church, Briefcase, HeartHandshake, Phone, MapPin, CalendarDays, Pencil, Heart, BookOpen, AlertTriangle, Globe, Shield, FileText } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, XCircle, GraduationCap, Church, Briefcase, HeartHandshake, Phone, MapPin, CalendarDays, Pencil, Heart, BookOpen, AlertTriangle, Globe, Shield, FileText, KeyRound, Copy } from 'lucide-react'
 import { formatDate, ecclesiasticalStatusLabel, ecclesiasticalStatusColor } from '@/lib/utils'
 
 interface Profile {
-  id: string; status: string
+  id: string; userId: string; status: string
+  photoUrl: string | null
   firstName: string | null; middleName: string | null; lastName: string | null
   dateOfBirth: string | null; placeOfBirth: string | null; nationality: string | null
-  diocese: string | null; phoneNumber: string | null; photoUrl: string | null
+  diocese: string | null; phoneNumber: string | null
   dateOfOrdination: string | null; placeOfOrdination: string | null
   ordinationBishop: string | null; diaconate: string | null
   additionalNotes: string | null; submittedAt: string | null
@@ -29,7 +30,7 @@ interface Profile {
   nextOfKinName: string | null; nextOfKinPhone: string | null
   biography: string | null
   user: { name: string | null; email: string; createdAt: string }
-  academicRecords: Array<{ id: string; institution: string; degree: string; fieldOfStudy: string | null; startYear: string | null; endYear: string | null; country: string | null }>
+  academicRecords: Array<{ id: string; level: string | null; institution: string; degree: string; fieldOfStudy: string | null; startYear: string | null; endYear: string | null; country: string | null }>
   assignments: Array<{ id: string; parish: string; diocese: string | null; role: string; startDate: string | null; endDate: string | null; isCurrent: boolean }>
   ministries: Array<{ id: string; title: string; organization: string | null; description: string | null; startDate: string | null; endDate: string | null }>
   languages: Array<{ id: string; language: string; spoken: string; written: string }>
@@ -58,6 +59,7 @@ export default function PriestProfileView({ role }: { role: string }) {
   const [notes, setNotes] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [passwordReset, setPasswordReset] = useState('')
 
   useEffect(() => {
     load()
@@ -99,6 +101,27 @@ export default function PriestProfileView({ role }: { role: string }) {
     }
   }
 
+  async function resetPriestPassword() {
+    if (!profile || !window.confirm(`Reset the password for ${fullName}? The priest will need to set a new password at next sign-in.`)) return
+    setBusy(true)
+    setError('')
+    setPasswordReset('')
+    try {
+      const res = await fetch(`/api/admin/users/${profile.userId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-role': role },
+        body: JSON.stringify({ action: 'RESET_PASSWORD' }),
+      })
+      const data = await res.json()
+      if (!res.ok) setError(data.error || 'Could not reset password')
+      else setPasswordReset(data.tempPassword)
+    } catch {
+      setError('Network error while resetting password')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   if (loading) {
     return <div className="flex justify-center py-20"><Spinner /></div>
   }
@@ -122,6 +145,15 @@ export default function PriestProfileView({ role }: { role: string }) {
       {error && <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 mb-4">{error}</div>}
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
+          <SectionCard>
+            <div className="flex items-center gap-4">
+              <ClergyAvatar firstName={profile.firstName} lastName={profile.lastName} photoUrl={profile.photoUrl} size="lg" ecclesiasticalStatus={profile.ecclesiasticalStatus} />
+              <div>
+                <p className="font-semibold">{fullName}</p>
+                <p className="text-sm text-stone-warm">Ordained {profile.dateOfOrdination || 'date not recorded'}</p>
+              </div>
+            </div>
+          </SectionCard>
           {/* Personal Info */}
           <SectionCard title="Personal Information">
             <div className="grid sm:grid-cols-2 gap-4">
@@ -155,6 +187,7 @@ export default function PriestProfileView({ role }: { role: string }) {
                     <div className="w-9 h-9 rounded-lg bg-gold/15 text-gold flex items-center justify-center shrink-0"><GraduationCap size={17} /></div>
                     <div>
                       <p className="font-medium text-sm">{r.degree}</p>
+                      {r.level && <p className="text-xs font-medium uppercase text-burgundy">{r.level.replaceAll('_', ' ')}</p>}
                       <p className="text-sm text-stone-warm">{r.institution} · {r.country || '—'}</p>
                       <p className="text-xs text-stone-warm">{r.startYear || ''} – {r.endYear || ''}</p>
                     </div>
@@ -348,6 +381,18 @@ export default function PriestProfileView({ role }: { role: string }) {
           <SectionCard title="Account">
             <p className="text-sm text-stone-warm">{profile.user.email}</p>
             <p className="text-xs text-stone-warm mt-1">Account created {formatDate(profile.user.createdAt)}</p>
+            <button onClick={resetPriestPassword} disabled={busy} className="btn-secondary w-full mt-4">
+              {busy ? <Spinner /> : <><KeyRound size={15} /> Reset Priest Password</>}
+            </button>
+            {passwordReset && (
+              <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                <p>Share this temporary passcode privately. It is shown only now.</p>
+                <div className="mt-2 flex items-center justify-between gap-2 font-mono font-semibold">
+                  <span>{passwordReset}</span>
+                  <button type="button" onClick={() => navigator.clipboard.writeText(passwordReset)} className="btn-ghost" aria-label="Copy temporary passcode"><Copy size={15} /></button>
+                </div>
+              </div>
+            )}
           </SectionCard>
         </div>
       </div>

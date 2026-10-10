@@ -56,7 +56,7 @@ async function main() {
       const priest = await prisma.user.create({
         data: {
           email: priestEmail,
-          name: 'Rev. John Doe',
+          name: 'John Doe',
           password,
           role: Role.PRIEST,
           isActive: true,

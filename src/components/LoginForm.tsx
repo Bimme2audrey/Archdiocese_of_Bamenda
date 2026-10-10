@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Logo, Spinner } from '@/components/ui'
 import PasswordInput from '@/components/PasswordInput'
-import { Lock, Mail, ShieldCheck, Award, Church } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Lock, Mail } from 'lucide-react'
 
 const roleDashboards: Record<string, string> = {
   IT_ADMIN: '/admin-dashboard',
@@ -14,15 +13,10 @@ const roleDashboards: Record<string, string> = {
   PRIEST: '/priest-dashboard',
 }
 
-const roleSelectors = [
-  { key: 'IT_ADMIN', label: 'IT Admin', icon: ShieldCheck },
-  { key: 'ADP_ADMIN', label: 'ADP Admin', icon: Award },
-  { key: 'PRIEST', label: 'Priest', icon: Church },
-]
-
 export default function LoginForm({ initialRole = '' }: { initialRole?: string }) {
   const router = useRouter()
-  const [role, setRole] = useState(initialRole)
+  const [role] = useState(initialRole || 'PRIEST')
+  const isPriestLogin = role === 'PRIEST'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -66,36 +60,16 @@ export default function LoginForm({ initialRole = '' }: { initialRole?: string }
 
       <form onSubmit={handleSubmit} className="card card-shadow p-8 space-y-5">
         <div>
-          <label className="block text-sm font-medium mb-1.5 text-stone-warm">I am a…</label>
-          <div className="grid grid-cols-3 gap-2">
-            {roleSelectors.map((r) => (
-              <button
-                key={r.key}
-                type="button"
-                onClick={() => setRole(r.key)}
-                className={cn(
-                  'flex flex-col items-center gap-1 rounded-lg border p-2.5 text-xs font-medium transition-colors',
-                  role === r.key
-                    ? 'border-burgundy bg-burgundy/5 text-burgundy'
-                    : 'border-sand text-stone-warm hover:border-gold'
-                )}
-              >
-                <r.icon size={16} />
-                {r.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1.5">Email Address</label>
+          <label className="block text-sm font-medium mb-1.5">
+            {isPriestLogin ? 'Email or WhatsApp Number' : 'Email Address'}
+          </label>
           <div className="relative">
             <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-warm" />
             <input
-              type="email"
+              type={isPriestLogin ? 'text' : 'email'}
               required
               className="input-base pl-9"
-              placeholder="you@archdiocese.org"
+              placeholder={isPriestLogin ? 'you@archdiocese.org or +237...' : 'admin@archdiocese.org'}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
@@ -128,6 +102,11 @@ export default function LoginForm({ initialRole = '' }: { initialRole?: string }
               <Link href="/register" className="text-burgundy font-medium hover:underline">
                 Complete your profile
               </Link>
+              <p className="mt-2">
+                <Link href="/forgot-password" className="text-burgundy font-medium hover:underline">
+                  Forgot your password?
+                </Link>
+              </p>
             </>
           )}
         </div>

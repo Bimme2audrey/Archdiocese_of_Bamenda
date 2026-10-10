@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { roleLabel } from '@/lib/utils'
+import ClergyAvatar from '@/components/ClergyAvatar'
 import {
   LayoutDashboard,
   FileText,
@@ -31,7 +32,7 @@ const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['IT_ADMIN', 'ADP_ADMIN', 'PRIEST'] },
   { label: 'My Profile', href: '/questionnaire', icon: FileText, roles: ['PRIEST'] },
   { label: 'Invite Priests', href: '/invite', icon: Users, roles: ['ADP_ADMIN'] },
-  { label: 'Clergy Records', href: '/priests', icon: UserRound, roles: ['ADP_ADMIN'] },
+  { label: 'View Records', href: '/priests', icon: UserRound, roles: ['ADP_ADMIN'] },
   { label: 'Reports & Stats', href: '/reports', icon: BarChart3, roles: ['ADP_ADMIN'] },
   { label: 'Calendar', href: '/calendar', icon: Calendar, roles: ['ADP_ADMIN'] },
   { label: 'Announcements', href: '/announcements', icon: Megaphone, roles: ['ADP_ADMIN'] },
@@ -49,7 +50,7 @@ function resolveHref(item: NavItem, role: string): string {
   switch (item.label) {
     case 'My Profile': return '/priest/questionnaire'
     case 'Invite Priests': return role === 'IT_ADMIN' ? '/it/invite' : '/adp/invite'
-    case 'Clergy Records': return role === 'IT_ADMIN' ? '/it/priests' : '/adp/priests'
+    case 'View Records': return role === 'IT_ADMIN' ? '/it/priests' : '/adp/priests'
     case 'Reports & Stats': return role === 'IT_ADMIN' ? '/it/reports' : '/adp/reports'
     case 'Calendar': return role === 'IT_ADMIN' ? '/it/calendar' : '/adp/calendar'
     case 'Announcements': return role === 'IT_ADMIN' ? '/it/announcements' : '/adp/announcements'
@@ -58,7 +59,7 @@ function resolveHref(item: NavItem, role: string): string {
   }
 }
 
-export default function Sidebar({ user }: { user: { name: string | null; email: string; role: string } }) {
+export default function Sidebar({ user }: { user: { name: string | null; email: string; role: string; photoUrl?: string | null } }) {
   const pathname = usePathname()
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -98,9 +99,12 @@ export default function Sidebar({ user }: { user: { name: string | null; email: 
   const footer = (
     <div className="p-3 border-t border-sand">
       <div className="flex items-center gap-3 rounded-lg px-3 py-2.5 mb-2 bg-cream">
-        <div className="w-9 h-9 rounded-full bg-burgundy/10 flex items-center justify-center text-burgundy font-semibold">
-          {(user.name?.[0] || user.email[0]).toUpperCase()}
-        </div>
+        <ClergyAvatar
+          photoUrl={user.photoUrl}
+          fullName={user.name}
+          size="sm"
+          ecclesiasticalStatus={user.role === 'PRIEST' ? 'Active' : undefined}
+        />
         <div className="leading-tight min-w-0">
           <p className="text-sm font-medium truncate">{user.name || 'User'}</p>
           <p className="text-[11px] text-stone-warm truncate">{user.email}</p>
@@ -127,7 +131,7 @@ export default function Sidebar({ user }: { user: { name: string | null; email: 
   return (
     <>
       {/* Mobile top bar */}
-      <div className="lg:hidden sticky top-0 z-40 flex items-center justify-between bg-white border-b border-sand px-4 py-3">
+      <div className="lg:hidden sticky top-0 z-40 flex items-center justify-between bg-white border-b border-sand px-4 py-3 print:hidden">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-burgundy flex items-center justify-center text-gold-light">
             <Church size={16} />
@@ -144,11 +148,11 @@ export default function Sidebar({ user }: { user: { name: string | null; email: 
         <div className="fixed inset-0 z-40 bg-black/40 lg:hidden" onClick={() => setOpen(false)} />
       )}
 
-      {/* Sidebar: static on desktop, drawer on mobile */}
+      {/* Sidebar: sticky on desktop, drawer on mobile */}
       <aside
         className={cn(
           'w-60 shrink-0 bg-white border-r border-sand flex flex-col min-h-screen h-screen top-0',
-          'fixed left-0 z-50 transition-transform lg:static lg:translate-x-0',
+          'fixed left-0 z-50 transition-transform lg:sticky lg:self-start lg:translate-x-0 print:hidden',
           open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
       >

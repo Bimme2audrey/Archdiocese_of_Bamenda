@@ -1,5 +1,6 @@
 ﻿import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
+import ClergyAvatar from '@/components/ClergyAvatar'
 import { PageHeader, SectionCard, StatusBadge, EmptyState, RoleBadge } from '@/components/ui'
 import AnnouncementsCard from '@/components/AnnouncementsCard'
 import {
@@ -125,7 +126,7 @@ export default async function RoleDashboard({ user }: { user: { id: string; role
   // ==================== PRIEST ====================
   const myProfile = await prisma.priestProfile.findUnique({
     where: { userId: user.id },
-    select: { status: true, firstName: true, lastName: true, updatedAt: true },
+    select: { status: true, firstName: true, lastName: true, updatedAt: true, photoUrl: true },
   })
 
   return (
@@ -135,7 +136,13 @@ export default async function RoleDashboard({ user }: { user: { id: string; role
         <div className="card card-shadow p-8">
           <div className="flex flex-col sm:flex-row sm:items-center gap-5">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-burgundy/10 flex items-center justify-center"><Church size={28} className="text-burgundy" /></div>
+              <ClergyAvatar
+                firstName={myProfile?.firstName}
+                lastName={myProfile?.lastName}
+                photoUrl={myProfile?.photoUrl}
+                size="lg"
+                ecclesiasticalStatus={myProfile?.status ? 'Active' : undefined}
+              />
               <div>
                 <p className="font-semibold text-lg">My Clergy Profile</p>
                 <p className="text-sm text-stone-warm">{myProfile ? `${[myProfile.firstName, myProfile.lastName].filter(Boolean).join(' ')}`.trim() || 'Not yet started' : 'Not yet started'}</p>
