@@ -28,18 +28,64 @@ export async function GET(req: NextRequest) {
       ]
     }
 
-    const profiles = await prisma.priestProfile.findMany({
+    const rawProfiles = await prisma.priestProfile.findMany({
       where,
       orderBy: { dateOfOrdination: 'asc' },
       include: {
         user: { select: { name: true, email: true } },
-        _count: { select: { academicRecords: true, assignments: true } },
       },
     })
 
-    return NextResponse.json({ profiles })
+    const profiles = rawProfiles.map((p) => ({
+      ...p,
+      _count: {
+        academicRecords: p.academicRecords?.length || 0,
+        assignments: p.assignments?.length || 0,
+      },
+    }))
+
+    const unprofiledAccounts = await prisma.user.findMany({
+      where: { role: 'PRIEST', priestProfile: { is: null } },
+      select: { id: true, name: true, email: true, createdAt: true },
+      orderBy: { createdAt: 'asc' },
+    })
+
+    return NextResponse.json({ profiles, unprofiledAccounts })
   } catch (error) {
     console.error('List priests error:', error)
+    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const user = await getUser(req)
+    if (!user || (user.role !== 'IT_ADMIN' && user.role !== 'ADP_ADMIN')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    }
+
+    const { userId } = await req.json()
+    if (typeof userId !== 'string' || !userId) {
+      return NextResponse.json({ error: 'A priest account is required' }, { status: 400 })
+    }
+
+    const priest = await prisma.user.findUnique({ where: { id: userId } })
+    if (!priest || priest.role !== 'PRIEST') {
+      return NextResponse.json({ error: 'Priest account not found' }, { status: 404 })
+    }
+
+    const existingProfile = await prisma.priestProfile.findUnique({ where: { userId } })
+    if (existingProfile) {
+      return NextResponse.json({ profileId: existingProfile.id })
+    }
+
+    const profile = await prisma.priestProfile.create({
+      data: { userId, status: 'DRAFT' },
+    })
+
+    return NextResponse.json({ success: true, profileId: profile.id }, { status: 201 })
+  } catch (error) {
+    console.error('Create priest profile error:', error)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }

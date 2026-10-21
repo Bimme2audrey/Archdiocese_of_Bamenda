@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto'
 import bcrypt from 'bcryptjs'
 import { prisma } from './prisma'
 import { cookies } from 'next/headers'
@@ -13,18 +14,20 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 
 export function generateToken(length = 32): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+  const bytes = randomBytes(length)
   let result = ''
   for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length))
+    result += chars[bytes[i] % chars.length]
   }
   return result
 }
 
 export function generateTempPassword(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  const bytes = randomBytes(8)
   let result = ''
   for (let i = 0; i < 8; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length))
+    result += chars[bytes[i] % chars.length]
   }
   return result
 }

@@ -12,7 +12,6 @@ export async function GET(req: NextRequest) {
     const profiles = await prisma.priestProfile.findMany({
       include: {
         user: { select: { name: true, email: true } },
-        assignments: true,
       },
     })
 

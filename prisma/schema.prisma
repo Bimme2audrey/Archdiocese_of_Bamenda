@@ -151,40 +151,31 @@ model PriestProfile {
   reviews ProfileReview[]
 }
 
-model AcademicRecord {
-  id          String        @id @default(auto()) @map("_id") @db.ObjectId
-  profileId   String        @db.ObjectId
-  level       String?
-  institution String
-  degree      String
+type AcademicRecord {
+  level        String?
+  institution  String
+  degree       String
   fieldOfStudy String?
-  startYear   String?
-  endYear     String?
-  country     String?
-  profile     PriestProfile @relation(fields: [profileId], references: [id])
+  startYear    String?
+  endYear      String?
+  country      String?
 }
 
-model PastoralAssignment {
-  id        String        @id @default(auto()) @map("_id") @db.ObjectId
-  profileId String        @db.ObjectId
+type PastoralAssignment {
   parish    String
   diocese   String?
   role      String
   startDate String?
   endDate   String?
-  isCurrent Boolean       @default(false)
-  profile   PriestProfile @relation(fields: [profileId], references: [id])
+  isCurrent Boolean  @default(false)
 }
 
-model OtherMinistry {
-  id           String        @id @default(auto()) @map("_id") @db.ObjectId
-  profileId    String        @db.ObjectId
+type OtherMinistry {
   title        String
   organization String?
   description  String?
   startDate    String?
   endDate      String?
-  profile      PriestProfile @relation(fields: [profileId], references: [id])
 }
 
 model ProfileReview {
@@ -206,23 +197,21 @@ model SystemConfig {
   updatedAt DateTime @default(now())
 }
 
-model LanguageProficiency {
-  id        String        @id @default(auto()) @map("_id") @db.ObjectId
-  profileId String        @db.ObjectId
+type LanguageProficiency {
   language  String
   spoken    String        // Basic | Conversational | Fluent | Native
   written   String        // Basic | Conversational | Fluent | Native
-  profile   PriestProfile @relation(fields: [profileId], references: [id])
 }
 
-model ClergyDocument {
-  id         String        @id @default(auto()) @map("_id") @db.ObjectId
-  profileId  String        @db.ObjectId
-  name       String
-  type       String        // Ordination Certificate | Academic Certificate | ID Document | CV | Other
-  uploadDate String
-  fileSize   String
-  profile    PriestProfile @relation(fields: [profileId], references: [id])
+type ClergyDocument {
+  name         String
+  type         String        // Ordination Certificate | Academic Certificate | ID Document | CV | Other
+  uploadDate   String
+  fileSize     String
+  originalName String?
+  contentType  String?
+  fileUrl      String?
+  contentData  String?
 }
 
 model Announcement {

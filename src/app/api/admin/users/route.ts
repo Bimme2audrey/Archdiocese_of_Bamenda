@@ -50,12 +50,14 @@ export async function POST(req: NextRequest) {
     const tempPassword = generateTempPassword()
     const hashed = await hashPassword(tempPassword)
 
+    const targetRole = role === 'IT_ADMIN' || role === 'PRIEST' ? role : 'ADP_ADMIN'
+
     await prisma.user.create({
       data: {
         email: normalizedEmail,
         name: name || null,
         password: hashed,
-        role: role === 'ADP_ADMIN' ? 'ADP_ADMIN' : 'ADP_ADMIN',
+        role: targetRole,
         tempPassword: true,
         createdBy: user.id,
       },

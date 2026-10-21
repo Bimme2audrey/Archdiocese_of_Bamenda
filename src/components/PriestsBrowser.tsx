@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
 import { PageHeader, SectionCard, StatusBadge, Spinner, EmptyState } from '@/components/ui'
 import ClergyAvatar from '@/components/ClergyAvatar'
-import { UserRound, Search, ArrowRight, Download, Filter, Trash2 } from 'lucide-react'
+import { UserRound, Search, ArrowRight, Download, Filter, Trash2, UserPlus } from 'lucide-react'
 import { ecclesiasticalStatusLabel, ecclesiasticalStatusColor, calculateAge } from '@/lib/utils'
 
 interface PriestRow {
@@ -17,6 +17,13 @@ interface PriestRow {
   dateOfBirth: string | null; ecclesiasticalStatus: string | null
   user: { name: string | null; email: string }
   _count: { academicRecords: number; assignments: number }
+}
+
+interface UnprofiledAccount {
+  id: string
+  name: string | null
+  email: string
+  createdAt: string
 }
 
 const profileTabs = [
@@ -37,33 +44,41 @@ const ecclStatuses = [
 
 function PriestsList({ role }: { role: string }) {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const activeTab = (searchParams.get('status') || 'ALL').toUpperCase()
   const [search, setSearch] = useState('')
   const [diocese, setDiocese] = useState('')
   const [ecclesiastical, setEcclesiastical] = useState('')
   const [profiles, setProfiles] = useState<PriestRow[]>([])
+  const [unprofiledAccounts, setUnprofiledAccounts] = useState<UnprofiledAccount[]>([])
+  const [creatingProfileFor, setCreatingProfileFor] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  async function load(status = activeTab) {
+  async function load(status = activeTab, filters?: { ecclesiastical?: string; diocese?: string; search?: string }) {
     setLoading(true)
+    const currentSearch = filters?.search !== undefined ? filters.search : search
+    const currentDiocese = filters?.diocese !== undefined ? filters.diocese : diocese
+    const currentEccl = filters?.ecclesiastical !== undefined ? filters.ecclesiastical : ecclesiastical
+
     try {
       const params = new URLSearchParams({ status })
-      if (search) params.set('search', search)
-      if (diocese) params.set('diocese', diocese)
+      if (currentSearch) params.set('search', currentSearch)
+      if (currentDiocese) params.set('diocese', currentDiocese)
       // Age-based filters need client-side; Deceased uses API
-      if (ecclesiastical === 'Deceased') params.set('ecclesiastical', 'Deceased')
+      if (currentEccl === 'Deceased') params.set('ecclesiastical', 'Deceased')
       const res = await fetch(`/api/admin/priests?${params}`, { headers: { 'x-role': role } })
       const data = await res.json()
       let results = data.profiles || []
+      setUnprofiledAccounts(data.unprofiledAccounts || [])
       // Client-side age filtering for non-Deceased options
-      if (ecclesiastical && ecclesiastical !== 'Deceased') {
+      if (currentEccl && currentEccl !== 'Deceased') {
         results = results.filter((p: PriestRow) => {
           if (p.ecclesiasticalStatus === 'Deceased') return false
           const age = calculateAge(p.dateOfBirth)
-          if (ecclesiastical === 'active_under_70') return age < 70
-          if (ecclesiastical === 'near_retirement') return age >= 70 && age < 75
-          if (ecclesiastical === 'retirement_eligible') return age >= 75
+          if (currentEccl === 'active_under_70') return age < 70
+          if (currentEccl === 'near_retirement') return age >= 70 && age < 75
+          if (currentEccl === 'retirement_eligible') return age >= 75
           return true
         })
       }
@@ -110,11 +125,38 @@ function exportCSV() {
     setProfiles((current) => current.filter((item) => item.id !== profile.id))
   }
 
+  async function createProfile(account: UnprofiledAccount) {
+    setCreatingProfileFor(account.id)
+    setError('')
+    try {
+      const res = await fetch('/api/admin/priests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-role': role },
+        body: JSON.stringify({ userId: account.id }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error || 'Could not create this priest profile')
+        return
+      }
+      router.push(`/${role === 'IT_ADMIN' ? 'it' : 'adp'}/priests/${data.profileId}/edit`)
+    } catch {
+      setError('Network error while creating the profile')
+    } finally {
+      setCreatingProfileFor('')
+    }
+  }
+
   return (
     <>
       <PageHeader
         title="Clergy Records"
         subtitle="All priest profiles across the Archdiocese."
+        action={
+          <Link href={`/${role === 'IT_ADMIN' ? 'it' : 'adp'}/invite`} className="btn-primary">
+            <UserPlus size={16} /> Invite Priest
+          </Link>
+        }
       />
 
       <SectionCard>
@@ -143,16 +185,28 @@ function exportCSV() {
               placeholder="Search name, email, or parish..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && load()}
+              onKeyDown={(e) => e.key === 'Enter' && load(activeTab, { search })}
             />
           </div>
-          <select className="input-base w-auto shrink-0" value={ecclesiastical} onChange={(e) => { setEcclesiastical(e.target.value); load() }}>
+          <select
+            className="input-base w-auto shrink-0"
+            value={ecclesiastical}
+            onChange={(e) => {
+              const val = e.target.value
+              setEcclesiastical(val)
+              load(activeTab, { ecclesiastical: val })
+            }}
+          >
             {ecclStatuses.map((s) => (<option key={s.value} value={s.value}>{s.label}</option>))}
           </select>
-<select
+          <select
             className="input-base w-auto shrink-0"
             value={diocese}
-            onChange={(e) => { setDiocese(e.target.value); load() }}
+            onChange={(e) => {
+              const val = e.target.value
+              setDiocese(val)
+              load(activeTab, { diocese: val })
+            }}
           >
             <option value="">Archdiocese of Bamenda</option>
           </select>
@@ -214,6 +268,37 @@ function exportCSV() {
           </div>
         )}
       </SectionCard>
+      {unprofiledAccounts.length > 0 && (
+        <SectionCard title="Accounts Without Clergy Profiles" action={<span className="text-xs text-stone-warm">{unprofiledAccounts.length} accounts</span>}>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr>
+                  <th className="table-header">Account</th>
+                  <th className="table-header">Created</th>
+                  <th className="table-header"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {unprofiledAccounts.map((account) => (
+                  <tr key={account.id}>
+                    <td className="table-cell">
+                      <p className="font-medium">{account.name || 'Unnamed priest'}</p>
+                      <p className="text-xs text-stone-warm">{account.email}</p>
+                    </td>
+                    <td className="table-cell text-sm text-stone-warm">{new Date(account.createdAt).toLocaleDateString()}</td>
+                    <td className="table-cell text-right">
+                      <button type="button" onClick={() => createProfile(account)} disabled={creatingProfileFor === account.id} className="btn-secondary">
+                        {creatingProfileFor === account.id ? <Spinner /> : <><UserPlus size={15} /> Create Profile</>}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </SectionCard>
+      )}
     </>
   )
 }

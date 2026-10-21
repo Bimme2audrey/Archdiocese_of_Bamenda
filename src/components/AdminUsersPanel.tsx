@@ -89,7 +89,7 @@ export default function AdminUsersPanel({ role }: { role: string }) {
     setReveal(null)
     const res = await fetch(`/api/admin/users/${id}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-role': role },
       body: JSON.stringify({ action }),
     })
     const data = await res.json()

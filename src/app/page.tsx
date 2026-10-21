@@ -1,25 +1,12 @@
 import Link from "next/link";
-import { Church, ShieldCheck, Database, CalendarClock, Users, BookOpen, ChevronRight, MapPin, Phone, Mail, Cross } from "lucide-react";
+import { Church, ShieldCheck, Database, CalendarClock, BookOpen, Cross } from "lucide-react";
+import { PublicHeader, PublicFooter } from "@/components/PublicChrome";
 
 export default function Home() {
   return (
     <div className="min-h-screen flex flex-col bg-white">
 
-      <header className="px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between border-b border-sand/60 bg-white/90 backdrop-blur sticky top-0 z-50">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-burgundy flex items-center justify-center text-gold-light shadow-md shrink-0">
-            <Cross size={18} className="sm:w-[22px] sm:h-[22px]" />
-          </div>
-          <div className="min-w-0">
-            <p className="font-bold text-sm sm:text-base tracking-tight text-burgundy truncate">ADP Clergy System</p>
-            <p className="text-[10px] sm:text-[11px] text-stone-warm font-medium truncate">Archdiocese of Bamenda</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <Link href="/register" className="btn-secondary text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2">Register</Link>
-          <Link href="/login" className="btn-primary text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2">Sign In</Link>
-        </div>
-      </header>
+      <PublicHeader />
 
       <main className="flex-1">
 
@@ -51,7 +38,7 @@ export default function Home() {
             <p className="max-w-2xl mx-auto text-sm sm:text-base lg:text-lg text-stone-warm mt-4 sm:mt-6 leading-relaxed px-2">
               The centralized digital repository for biographical records, pastoral assignments,
               academic formation, ecclesiastical status, and necrology; serving the priests
-              of the Metropolitan Sea of Bamenda.
+              of the Metropolitan See of Bamenda.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-6 sm:mt-8">
@@ -63,8 +50,14 @@ export default function Home() {
               </Link>
             </div>
 
+            <p className="mt-5 text-sm sm:text-base text-stone-warm">
+              Administrator?{' '}
+              <Link href="/clergy-login" className="font-medium text-burgundy hover:underline">Sign in to the Admin Board</Link>
+            </p>
+
           </div>
         </section>
+
 
         <section className="max-w-5xl mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-20">
           <div className="text-center mb-8 sm:mb-12">
@@ -90,77 +83,9 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="bg-cream/50 border-y border-sand/50">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-20">
-            <div className="text-center mb-8 sm:mb-12">
-              <p className="text-[10px] sm:text-xs font-bold text-gold uppercase tracking-widest mb-2 sm:mb-3">Priest Portal</p>
-              <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-ink px-2">Clergy Sign In</h2>
-              <p className="text-sm sm:text-base text-stone-warm mt-2 max-w-xl mx-auto px-2">
-                Sign in to maintain your personal clergy record.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 max-w-md mx-auto gap-4 sm:gap-5">
-              {[
-                {
-                  icon: Users, title: "Priest Portal",
-                  desc: "Complete your personal dossier, update pastoral assignments, academic records, and ministry history.",
-                  href: "/priest-login",
-                  border: "border-l-emerald-600", bg: "bg-emerald-50",
-                  iconBg: "bg-emerald-600 text-white",
-                },
-              ].map(({ icon: Icon, title, desc, href, border, bg, iconBg }) => (
-                <Link
-                  key={title}
-                  href={href}
-                  className={"card card-shadow p-5 sm:p-6 border-l-4 " + border + " " + bg + " text-left group hover:shadow-lg transition-all"}
-                >
-                  <div className={"w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center " + iconBg + " mb-3 sm:mb-4"}>
-                    <Icon size={20} className="sm:w-[21px] sm:h-[21px]" />
-                  </div>
-                  <p className="font-semibold text-sm sm:text-base text-ink mb-1.5 sm:mb-2">{title}</p>
-                  <p className="text-xs sm:text-sm text-stone-warm leading-relaxed mb-3 sm:mb-4">{desc}</p>
-                  <span className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-burgundy group-hover:gap-2 transition-all">
-                    Login <ChevronRight size={14} className="sm:w-[15px] sm:h-[15px]" />
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="max-w-5xl mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-20">
-          <div className="card card-shadow p-6 sm:p-8 lg:p-10 text-center">
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-burgundy/10 flex items-center justify-center text-burgundy mx-auto mb-4 sm:mb-5">
-              <Church size={22} className="sm:w-[26px] sm:h-[26px]" />
-            </div>
-            <h3 className="text-lg sm:text-xl font-bold text-ink mb-2">Metropolitan Chancery Office</h3>
-            <p className="text-sm sm:text-base text-stone-warm mb-5 sm:mb-6 max-w-lg mx-auto">
-              For inquiries regarding clergy records, invitations, or system access, contact the ADP Chancery Secretariat.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 text-xs sm:text-sm text-stone-warm">
-              <span className="flex items-center gap-2"><MapPin size={14} className="sm:w-[15px] sm:h-[15px] text-gold shrink-0" /> Mankon, P.O. Box 82, Bamenda</span>
-              <span className="flex items-center gap-2"><Phone size={14} className="sm:w-[15px] sm:h-[15px] text-gold shrink-0" /> +237 670 000 111</span>
-              <span className="flex items-center gap-2"><Mail size={14} className="sm:w-[15px] sm:h-[15px] text-gold shrink-0" /> chancery@bamenda-archdiocese.org</span>
-            </div>
-          </div>
-        </section>
-
       </main>
 
-      <footer className="bg-burgundy text-cream/80">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 text-center">
-          <div className="flex items-center justify-center gap-2 mb-2 sm:mb-3">
-            <Cross size={14} className="sm:w-[16px] sm:h-[16px] text-gold" />
-            <span className="text-gold font-serif italic text-xs sm:text-sm">In Caritate et Veritate</span>
-            <Cross size={14} className="sm:w-[16px] sm:h-[16px] text-gold" />
-          </div>
-          <p className="text-xs sm:text-sm font-medium text-cream">Association of Diocesan Priests · Metropolitan Sea of Bamenda</p>
-          <p className="text-[10px] sm:text-xs text-cream/50 mt-1.5 sm:mt-2">
-            &copy; {new Date().getFullYear()} ADP Clergy Profile System. Sacred &amp; Confidential Ecclesiastical Records.
-          </p>
-        </div>
-      </footer>
+      <PublicFooter />
 
     </div>
   );

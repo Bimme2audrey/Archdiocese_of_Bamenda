@@ -10,7 +10,7 @@ interface ARow { level: string; institution: string; degree: string; fieldOfStud
 interface ARow2 { parish: string; diocese: string; role: string; startDate: string; endDate: string; isCurrent: boolean }
 interface MRow { title: string; organization: string; description: string; startDate: string; endDate: string }
 interface LRow { language: string; spoken: string; written: string }
-interface DRow { name: string; type: string; uploadDate: string; fileSize: string }
+interface DRow { name: string; type: string; uploadDate: string; fileSize: string; originalName: string; contentType: string; fileUrl?: string; contentData?: string }
 
 interface Form {
   accountName: string; accountEmail: string
@@ -76,7 +76,7 @@ export default function AdminProfileEditor({ role }: { role: string }) {
             assignments: p.assignments?.length ? p.assignments.map((a: any) => ({ parish: a.parish || '', diocese: a.diocese || '', role: a.role || '', startDate: a.startDate || '', endDate: a.endDate || '', isCurrent: a.isCurrent })) : [{ parish: '', diocese: '', role: '', startDate: '', endDate: '', isCurrent: false }],
             ministries: p.ministries?.length ? p.ministries.map((m: any) => ({ title: m.title || '', organization: m.organization || '', description: m.description || '', startDate: m.startDate || '', endDate: m.endDate || '' })) : [{ title: '', organization: '', description: '', startDate: '', endDate: '' }],
             languages: p.languages?.map((l: any) => ({ language: l.language || '', spoken: l.spoken || '', written: l.written || '' })) || [],
-            documents: p.documents?.map((d: any) => ({ name: d.name || '', type: d.type || '', uploadDate: d.uploadDate || '', fileSize: d.fileSize || '' })) || [],
+            documents: p.documents?.map((d: any) => ({ name: d.name || '', type: d.type || '', uploadDate: d.uploadDate || '', fileSize: d.fileSize || '', originalName: d.originalName || '', contentType: d.contentType || '', contentData: d.contentData || '' })) || [],
           })
         }
       } catch {
@@ -93,7 +93,7 @@ export default function AdminProfileEditor({ role }: { role: string }) {
     setForm((f) => (f ? { ...f, [key]: value } : f))
   }
 
-  function handlePhotoChange(event: React.ChangeEvent<HTMLInputElement>) {
+  async function handlePhotoChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
     if (!file) return
     if (!file.type.startsWith('image/') || file.size > 5 * 1024 * 1024) {
@@ -101,22 +101,67 @@ export default function AdminProfileEditor({ role }: { role: string }) {
       event.target.value = ''
       return
     }
-    const reader = new FileReader()
-    reader.onload = () => {
-      const image = new Image()
-      image.onload = () => {
-        const scale = Math.min(1, 512 / Math.max(image.width, image.height))
-        const canvas = document.createElement('canvas')
-        canvas.width = Math.round(image.width * scale)
-        canvas.height = Math.round(image.height * scale)
-        const context = canvas.getContext('2d')
-        context?.drawImage(image, 0, 0, canvas.width, canvas.height)
-        if (context) set('photoUrl', canvas.toDataURL('image/jpeg', 0.8))
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('folder', 'avatars')
+
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'x-role': role },
+        body: formData,
+      })
+      const data = await res.json()
+      if (res.ok && data.url) {
+        set('photoUrl', data.url)
+        setMessage('Photo uploaded.')
+      } else {
+        setMessage(data.error || 'Failed to upload photo')
       }
-      image.src = String(reader.result)
+    } catch {
+      setMessage('Network error uploading photo')
+    } finally {
+      event.target.value = ''
     }
-    reader.readAsDataURL(file)
-    event.target.value = ''
+  }
+
+  async function handleDocumentUpload(index: number, event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    if (!file) return
+    if (!['application/pdf', 'image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 10 * 1024 * 1024) {
+      setMessage('Choose a PDF or JPG, PNG, or WebP image smaller than 10 MB.')
+      event.target.value = ''
+      return
+    }
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('folder', 'documents')
+
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'x-role': role },
+        body: formData,
+      })
+      const data = await res.json()
+      if (res.ok && data.url) {
+        setArr('documents', index, {
+          name: form?.documents[index]?.name || file.name,
+          originalName: file.name,
+          contentType: file.type,
+          fileUrl: data.url,
+          fileSize: data.fileSize || `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+          uploadDate: new Date().toISOString().slice(0, 10),
+        })
+        setMessage(`${file.name} uploaded.`)
+      } else {
+        setMessage(data.error || 'Failed to upload document')
+      }
+    } catch {
+      setMessage('Network error uploading document')
+    } finally {
+      event.target.value = ''
+    }
   }
 
   function setArr(key: 'academicRecords' | 'assignments' | 'ministries' | 'languages' | 'documents', i: number, patch: any) {
@@ -134,7 +179,7 @@ export default function AdminProfileEditor({ role }: { role: string }) {
       : key === 'assignments' ? { parish: '', diocese: '', role: '', startDate: '', endDate: '', isCurrent: false }
       : key === 'ministries' ? { title: '', organization: '', description: '', startDate: '', endDate: '' }
       : key === 'languages' ? { language: '', spoken: '', written: '' }
-      : { name: '', type: '', uploadDate: new Date().toISOString().slice(0, 10), fileSize: '' }
+      : { name: '', type: '', uploadDate: new Date().toISOString().slice(0, 10), fileSize: '', originalName: '', contentType: '', contentData: '' }
     setForm((f) => (f ? { ...f, [key]: [...(f[key] as any[]), row] } : f))
   }
 
@@ -214,29 +259,6 @@ if (loading) return <div className="flex justify-center py-20"><Spinner /></div>
         </div>
       </SectionCard>
 
-      <SectionCard title="Ordination">
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div><label className="block text-sm font-medium mb-1.5">Date of Ordination</label><input type="date" className="input-base" value={form.dateOfOrdination} onChange={(e) => set('dateOfOrdination', e.target.value)} /></div>
-          <div><label className="block text-sm font-medium mb-1.5">Place of Ordination</label><input className="input-base" value={form.placeOfOrdination} onChange={(e) => set('placeOfOrdination', e.target.value)} /></div>
-          <div><label className="block text-sm font-medium mb-1.5">Ordaining Bishop</label><input className="input-base" value={form.ordinationBishop} onChange={(e) => set('ordinationBishop', e.target.value)} /></div>
-          <div><label className="block text-sm font-medium mb-1.5">Diaconate</label><input type="date" className="input-base" value={form.diaconate} onChange={(e) => set('diaconate', e.target.value)} /></div>
-        </div>
-      </SectionCard>
-
-      <SectionCard title="Ecclesiastical Status & Necrology">
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1.5">Status</label>
-            <select className="input-base" value={form.ecclesiasticalStatus} onChange={(e) => set('ecclesiasticalStatus', e.target.value)}>
-              {statusOptions.map((option) => <option key={option} value={option}>{option}</option>)}
-            </select>
-          </div>
-          <TextField label="Date of Death" type="date" value={form.dateOfDeath} onChange={(value) => set('dateOfDeath', value)} />
-          <TextField label="Resting Place" value={form.restingPlace} onChange={(value) => set('restingPlace', value)} />
-          <TextField label="Necrology Notes" value={form.necrologyNotes} onChange={(value) => set('necrologyNotes', value)} />
-        </div>
-      </SectionCard>
-
       <SectionCard title="Sacramental Information">
         <div className="grid sm:grid-cols-2 gap-4">
           <TextField label="Baptism Date" type="date" value={form.baptismDate} onChange={(value) => set('baptismDate', value)} />
@@ -247,33 +269,12 @@ if (loading) return <div className="flex justify-center py-20"><Spinner /></div>
         </div>
       </SectionCard>
 
-      <SectionCard title="Emergency Contact">
-        <div className="grid sm:grid-cols-3 gap-4">
-          <TextField label="Contact Name" value={form.emergencyContactName} onChange={(value) => set('emergencyContactName', value)} />
-          <TextField label="Contact Phone" value={form.emergencyContactPhone} onChange={(value) => set('emergencyContactPhone', value)} />
-          <TextField label="Relationship" value={form.emergencyContactRelationship} onChange={(value) => set('emergencyContactRelationship', value)} />
-        </div>
-      </SectionCard>
-
-      <SectionCard title="Health & Next of Kin">
-        <div className="grid sm:grid-cols-2 gap-4">
-          <TextField label="Blood Group" value={form.bloodGroup} onChange={(value) => set('bloodGroup', value)} />
-          <TextField label="Allergies" value={form.allergies} onChange={(value) => set('allergies', value)} />
-          <TextField label="Medical Conditions" value={form.medicalConditions} onChange={(value) => set('medicalConditions', value)} />
-          <TextField label="Next of Kin Name" value={form.nextOfKinName} onChange={(value) => set('nextOfKinName', value)} />
-          <TextField label="Next of Kin Phone" value={form.nextOfKinPhone} onChange={(value) => set('nextOfKinPhone', value)} />
-        </div>
-      </SectionCard>
-
-      <SectionCard title="Additional Notes">
-        <textarea className="input-base min-h-24" value={form.additionalNotes} onChange={(e) => set('additionalNotes', e.target.value)} />
-      </SectionCard>
-<SectionCard title="Academic Records" action={<button onClick={() => addRow('academicRecords')} className="btn-ghost text-burgundy"><Plus size={15} /> Add</button>}>
+      <SectionCard title="Education & Formation" action={<button onClick={() => addRow('academicRecords')} className="btn-ghost text-burgundy"><Plus size={15} /> Add</button>}>
         {form.academicRecords.map((r, i) => (
           <div key={i} className="grid grid-cols-2 sm:grid-cols-7 gap-2 mb-3 items-center">
             <select className="input-base" value={r.level} onChange={(e) => setArr('academicRecords', i, { level: e.target.value })}>
               <option value="">Stage</option><option value="PRIMARY">Primary</option><option value="SECONDARY">Secondary</option>
-              <option value="PHILOSOPHY">Philosophy</option><option value="THEOLOGY">Theology</option><option value="SEMINARY">Seminary</option>
+              <option value="SEMINARY">Seminary</option><option value="PHILOSOPHY">Philosophy</option><option value="THEOLOGY">Theology</option>
               <option value="UNIVERSITY">University</option><option value="OTHER">Other</option>
             </select>
             <input className="input-base sm:col-span-2" placeholder="Institution" value={r.institution} onChange={(e) => setArr('academicRecords', i, { institution: e.target.value })} />
@@ -284,6 +285,15 @@ if (loading) return <div className="flex justify-center py-20"><Spinner /></div>
             <button onClick={() => removeRow('academicRecords', i)} className="text-red-500 hover:text-red-700"><Trash2 size={16} /></button>
           </div>
         ))}
+      </SectionCard>
+
+      <SectionCard title="Diaconate & Ordination">
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div><label className="block text-sm font-medium mb-1.5">Date of Diaconate</label><input type="date" className="input-base" value={form.diaconate} onChange={(e) => set('diaconate', e.target.value)} /></div>
+          <div><label className="block text-sm font-medium mb-1.5">Date of Ordination</label><input type="date" className="input-base" value={form.dateOfOrdination} onChange={(e) => set('dateOfOrdination', e.target.value)} /></div>
+          <div><label className="block text-sm font-medium mb-1.5">Place of Ordination</label><input className="input-base" value={form.placeOfOrdination} onChange={(e) => set('placeOfOrdination', e.target.value)} /></div>
+          <div><label className="block text-sm font-medium mb-1.5">Ordaining Bishop</label><input className="input-base" value={form.ordinationBishop} onChange={(e) => set('ordinationBishop', e.target.value)} /></div>
+        </div>
       </SectionCard>
 
       <SectionCard title="Pastoral Assignments" action={<button onClick={() => addRow('assignments')} className="btn-ghost text-burgundy"><Plus size={15} /> Add</button>}>
@@ -311,29 +321,18 @@ if (loading) return <div className="flex justify-center py-20"><Spinner /></div>
         ))}
       </SectionCard>
 
-      <SectionCard title="Languages" action={<button onClick={() => addRow('languages')} className="btn-ghost text-burgundy"><Plus size={15} /> Add</button>}>
-        {form.languages.length === 0 && <p className="text-sm text-stone-warm mb-3">No languages recorded.</p>}
-        {form.languages.map((language, i) => (
-          <div key={i} className="grid sm:grid-cols-4 gap-2 mb-3 items-center">
-            <input className="input-base" placeholder="Language" value={language.language} onChange={(e) => setArr('languages', i, { language: e.target.value })} />
-            <select className="input-base" value={language.spoken} onChange={(e) => setArr('languages', i, { spoken: e.target.value })}><option value="">Spoken level</option><option>Basic</option><option>Conversational</option><option>Fluent</option><option>Native</option></select>
-            <select className="input-base" value={language.written} onChange={(e) => setArr('languages', i, { written: e.target.value })}><option value="">Written level</option><option>Basic</option><option>Conversational</option><option>Fluent</option><option>Native</option></select>
-            <button type="button" onClick={() => removeRow('languages', i)} className="text-red-500 hover:text-red-700"><Trash2 size={16} /></button>
+      <SectionCard title="Ecclesiastical Status & Necrology">
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1.5">Status</label>
+            <select className="input-base" value={form.ecclesiasticalStatus} onChange={(e) => set('ecclesiasticalStatus', e.target.value)}>
+              {statusOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+            </select>
           </div>
-        ))}
-      </SectionCard>
-
-      <SectionCard title="Documents" action={<button onClick={() => addRow('documents')} className="btn-ghost text-burgundy"><Plus size={15} /> Add</button>}>
-        {form.documents.length === 0 && <p className="text-sm text-stone-warm mb-3">No documents recorded.</p>}
-        {form.documents.map((document, i) => (
-          <div key={i} className="grid sm:grid-cols-5 gap-2 mb-3 items-center">
-            <input className="input-base" placeholder="Document name" value={document.name} onChange={(e) => setArr('documents', i, { name: e.target.value })} />
-            <select className="input-base" value={document.type} onChange={(e) => setArr('documents', i, { type: e.target.value })}><option value="">Document type</option><option>Ordination Certificate</option><option>Academic Certificate</option><option>ID Document</option><option>CV</option><option>Other</option></select>
-            <input className="input-base" type="date" aria-label="Upload date" value={document.uploadDate} onChange={(e) => setArr('documents', i, { uploadDate: e.target.value })} />
-            <input className="input-base" placeholder="File size" value={document.fileSize} onChange={(e) => setArr('documents', i, { fileSize: e.target.value })} />
-            <button type="button" onClick={() => removeRow('documents', i)} className="text-red-500 hover:text-red-700"><Trash2 size={16} /></button>
-          </div>
-        ))}
+          <TextField label="Date of Death" type="date" value={form.dateOfDeath} onChange={(value) => set('dateOfDeath', value)} />
+          <TextField label="Resting Place" value={form.restingPlace} onChange={(value) => set('restingPlace', value)} />
+          <TextField label="Necrology Notes" value={form.necrologyNotes} onChange={(value) => set('necrologyNotes', value)} />
+        </div>
       </SectionCard>
 
       <SectionCard title="Skills & Biography">
@@ -347,6 +346,53 @@ if (loading) return <div className="flex justify-center py-20"><Spinner /></div>
             <textarea className="input-base min-h-32" value={form.biography} onChange={(e) => set('biography', e.target.value)} />
           </div>
         </div>
+      </SectionCard>
+
+      <SectionCard title="Languages" action={<button onClick={() => addRow('languages')} className="btn-ghost text-burgundy"><Plus size={15} /> Add</button>}>
+        {form.languages.length === 0 && <p className="text-sm text-stone-warm mb-3">No languages recorded.</p>}
+        {form.languages.map((language, i) => (
+          <div key={i} className="grid sm:grid-cols-4 gap-2 mb-3 items-center">
+            <input className="input-base" placeholder="Language" value={language.language} onChange={(e) => setArr('languages', i, { language: e.target.value })} />
+            <select className="input-base" value={language.spoken} onChange={(e) => setArr('languages', i, { spoken: e.target.value })}><option value="">Spoken level</option><option>Basic</option><option>Conversational</option><option>Fluent</option><option>Native</option></select>
+            <select className="input-base" value={language.written} onChange={(e) => setArr('languages', i, { written: e.target.value })}><option value="">Written level</option><option>Basic</option><option>Conversational</option><option>Fluent</option><option>Native</option></select>
+            <button type="button" onClick={() => removeRow('languages', i)} className="text-red-500 hover:text-red-700"><Trash2 size={16} /></button>
+          </div>
+        ))}
+      </SectionCard>
+
+      <SectionCard title="Emergency Contact">
+        <div className="grid sm:grid-cols-3 gap-4">
+          <TextField label="Contact Name" value={form.emergencyContactName} onChange={(value) => set('emergencyContactName', value)} />
+          <TextField label="Contact Phone" value={form.emergencyContactPhone} onChange={(value) => set('emergencyContactPhone', value)} />
+          <TextField label="Relationship" value={form.emergencyContactRelationship} onChange={(value) => set('emergencyContactRelationship', value)} />
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Health & Next of Kin">
+        <div className="grid sm:grid-cols-2 gap-4">
+          <TextField label="Blood Group" value={form.bloodGroup} onChange={(value) => set('bloodGroup', value)} />
+          <TextField label="Allergies" value={form.allergies} onChange={(value) => set('allergies', value)} />
+          <TextField label="Medical Conditions" value={form.medicalConditions} onChange={(value) => set('medicalConditions', value)} />
+          <TextField label="Next of Kin Name" value={form.nextOfKinName} onChange={(value) => set('nextOfKinName', value)} />
+          <TextField label="Next of Kin Phone" value={form.nextOfKinPhone} onChange={(value) => set('nextOfKinPhone', value)} />
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Documents" action={<button onClick={() => addRow('documents')} className="btn-ghost text-burgundy"><Plus size={15} /> Add</button>}>
+        {form.documents.length === 0 && <p className="text-sm text-stone-warm mb-3">No documents recorded.</p>}
+        {form.documents.map((document, i) => (
+          <div key={i} className="grid sm:grid-cols-5 gap-2 mb-3 items-center">
+            <input className="input-base" placeholder="Document name" value={document.name} onChange={(e) => setArr('documents', i, { name: e.target.value })} />
+            <select className="input-base" value={document.type} onChange={(e) => setArr('documents', i, { type: e.target.value })}><option value="">Document type</option><option>Ordination Certificate</option><option>Academic Certificate</option><option>ID Document</option><option>CV</option><option>Other</option></select>
+            <label className="btn-secondary cursor-pointer justify-center">{(document.fileUrl || document.contentData) ? 'Replace file' : 'Upload file'}<input type="file" accept="application/pdf,image/jpeg,image/png,image/webp" className="sr-only" onChange={(e) => handleDocumentUpload(i, e)} /></label>
+            <div className="text-xs text-stone-warm">{(document.fileUrl || document.contentData) ? `${document.originalName || document.name} · ${document.fileSize}` : 'PDF or image, max 10 MB'}</div>
+            <button type="button" onClick={() => removeRow('documents', i)} className="text-red-500 hover:text-red-700"><Trash2 size={16} /></button>
+          </div>
+        ))}
+      </SectionCard>
+
+      <SectionCard title="Additional Notes">
+        <textarea className="input-base min-h-24" value={form.additionalNotes} onChange={(e) => set('additionalNotes', e.target.value)} />
       </SectionCard>
 
       <div className="flex justify-end">

@@ -55,7 +55,7 @@ export default function LoginForm({ initialRole = '' }: { initialRole?: string }
       <div className="flex flex-col items-center mb-8">
         <Logo size="lg" />
         <h1 className="text-2xl font-bold mt-4 tracking-tight">Welcome Back</h1>
-        <p className="text-sm text-stone-warm mt-1">Sign in to the ADP Clergy Profile System</p>
+        <p className="text-sm text-stone-warm mt-1">Sign in to the ADP Profile System</p>
       </div>
 
       <form onSubmit={handleSubmit} className="card card-shadow p-8 space-y-5">

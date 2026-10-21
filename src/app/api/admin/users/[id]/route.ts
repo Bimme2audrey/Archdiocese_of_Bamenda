@@ -15,7 +15,8 @@ export async function POST(req: NextRequest, context: RouteContext) {
     }
 
     const { id } = await context.params
-    const { action } = await req.json()
+    const body = await req.json()
+    const { action, role } = body
 
     const target = await prisma.user.findUnique({ where: { id } })
     if (!target) return NextResponse.json({ error: 'User not found' }, { status: 404 })
@@ -45,7 +46,6 @@ export async function POST(req: NextRequest, context: RouteContext) {
 
     if (action === 'SET_ROLE') {
       if (user.role !== 'IT_ADMIN') return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-      const { role } = await req.json()
       if (!['ADP_ADMIN', 'PRIEST', 'IT_ADMIN'].includes(role)) {
         return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
       }

@@ -80,45 +80,39 @@ async function main() {
           dateOfOrdination: '2005-08-20',
           placeOfOrdination: 'St. Peter Cathedral',
           ordinationBishop: 'Most Rev. John Cardinal Njue',
-          academicRecords: {
-            create: [
-              {
-                institution: 'Pontifical Urbaniana University, Rome',
-                degree: 'Licentiate in Sacred Theology',
-                fieldOfStudy: 'Moral Theology',
-                startYear: '1998',
-                endYear: '2002',
-                country: 'Italy',
-              },
-            ],
-          },
-          assignments: {
-            create: [
-              {
-                parish: 'St. Joseph Parish, Karen',
-                role: 'Parish Priest',
-                startDate: '2015',
-                endDate: '',
-                isCurrent: true,
-              },
-              {
-                parish: 'St. Monica Parish',
-                role: 'Assistant Priest',
-                startDate: '2007',
-                endDate: '2015',
-              },
-            ],
-          },
-          ministries: {
-            create: [
-              {
-                title: 'Chaplain - University Catholic Society',
-                organization: 'Catholic University Outreach',
-                description: 'Spiritual guidance for university students.',
-                startDate: '2016',
-              },
-            ],
-          },
+          academicRecords: [
+            {
+              institution: 'Pontifical Urbaniana University, Rome',
+              degree: 'Licentiate in Sacred Theology',
+              fieldOfStudy: 'Moral Theology',
+              startYear: '1998',
+              endYear: '2002',
+              country: 'Italy',
+            },
+          ],
+          assignments: [
+            {
+              parish: 'St. Joseph Parish, Karen',
+              role: 'Parish Priest',
+              startDate: '2015',
+              endDate: '',
+              isCurrent: true,
+            },
+            {
+              parish: 'St. Monica Parish',
+              role: 'Assistant Priest',
+              startDate: '2007',
+              endDate: '2015',
+            },
+          ],
+          ministries: [
+            {
+              title: 'Chaplain - University Catholic Society',
+              organization: 'Catholic University Outreach',
+              description: 'Spiritual guidance for university students.',
+              startDate: '2016',
+            },
+          ],
           additionalNotes: 'Dedicated to pastoral care and youth ministry.',
         },
       })

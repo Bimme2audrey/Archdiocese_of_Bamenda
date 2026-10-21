@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser, getUser } from '@/lib/auth'
+import { withChronologicalRecords } from '@/lib/chronology'
 
 export async function GET(req: NextRequest) {
   try {
@@ -10,14 +11,11 @@ export async function GET(req: NextRequest) {
     const profile = await prisma.priestProfile.findUnique({
       where: { userId: user.id },
       include: {
-        academicRecords: true,
-        assignments: true,
-        ministries: true,
         reviews: { include: { reviewer: { select: { name: true } } }, orderBy: { createdAt: 'desc' } },
       },
     })
 
-    return NextResponse.json({ profile })
+    return NextResponse.json({ profile: profile && withChronologicalRecords(profile) })
   } catch (error) {
     console.error('Get profile error:', error)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })

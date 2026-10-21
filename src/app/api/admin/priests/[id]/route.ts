@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser, getUser } from '@/lib/auth'
+import { isUploadedClergyDocumentList } from '@/lib/clergy-documents'
+import { withChronologicalRecords } from '@/lib/chronology'
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -19,11 +21,6 @@ export async function GET(req: NextRequest, context: RouteContext) {
       where: { id },
       include: {
         user: { select: { name: true, email: true, createdAt: true } },
-        academicRecords: true,
-        assignments: true,
-        ministries: true,
-        languages: true,
-        documents: true,
         reviews: { include: { reviewer: { select: { name: true } } }, orderBy: { createdAt: 'desc' } },
       },
     })
@@ -32,7 +29,7 @@ export async function GET(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
-    return NextResponse.json({ profile })
+    return NextResponse.json({ profile: withChronologicalRecords(profile) })
   } catch (error) {
     console.error('Get priest error:', error)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
@@ -69,6 +66,10 @@ export async function POST(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
+    if (!isUploadedClergyDocumentList(documents)) {
+      return NextResponse.json({ error: 'Documents must be PDF or image files up to 4 MB' }, { status: 413 })
+    }
+
     if (typeof accountEmail === 'string' && accountEmail.trim()) {
       const normalizedAccountEmail = accountEmail.toLowerCase().trim()
       const existingAccount = await prisma.user.findUnique({ where: { email: normalizedAccountEmail } })
@@ -83,6 +84,60 @@ export async function POST(req: NextRequest, context: RouteContext) {
       await prisma.user.update({ where: { id: profile.userId }, data: { name: accountName.trim() || null } })
     }
 
+    const formattedAcademicRecords = (Array.isArray(academicRecords) ? academicRecords : [])
+      .filter((r: any) => r && r.institution)
+      .map((r: any) => ({
+        level: r.level || null,
+        institution: r.institution,
+        degree: r.degree || '',
+        fieldOfStudy: r.fieldOfStudy || null,
+        startYear: r.startYear || null,
+        endYear: r.endYear || null,
+        country: r.country || null,
+      }))
+
+    const formattedAssignments = (Array.isArray(assignments) ? assignments : [])
+      .filter((r: any) => r && r.parish)
+      .map((r: any) => ({
+        parish: r.parish,
+        diocese: r.diocese || null,
+        role: r.role || '',
+        startDate: r.startDate || null,
+        endDate: r.endDate || null,
+        isCurrent: !!r.isCurrent,
+      }))
+
+    const formattedMinistries = (Array.isArray(ministries) ? ministries : [])
+      .filter((r: any) => r && r.title)
+      .map((r: any) => ({
+        title: r.title,
+        organization: r.organization || null,
+        description: r.description || null,
+        startDate: r.startDate || null,
+        endDate: r.endDate || null,
+      }))
+
+    const formattedLanguages = (Array.isArray(languages) ? languages : [])
+      .filter((r: any) => r && r.language)
+      .map((r: any) => ({
+        language: r.language,
+        spoken: r.spoken || 'Basic',
+        written: r.written || 'Basic',
+      }))
+
+    const formattedDocuments = (Array.isArray(documents) ? documents : [])
+      .filter((d: any) => d && d.name)
+      .map((d: any) => ({
+        name: d.name,
+        type: d.type || 'Other',
+        uploadDate: d.uploadDate || '',
+        fileSize: d.fileSize || '',
+        originalName: d.originalName || null,
+        contentType: d.contentType || null,
+        fileUrl: d.fileUrl || null,
+        contentData: d.contentData || null,
+      }))
+
     const updated = await prisma.priestProfile.update({
       where: { id },
       data: {
@@ -95,6 +150,11 @@ export async function POST(req: NextRequest, context: RouteContext) {
         baptismDate, baptismParish, confirmationDate, confirmationParish,
         religiousCongregation, skills, bloodGroup, allergies, medicalConditions,
         nextOfKinName, nextOfKinPhone, biography,
+        academicRecords: formattedAcademicRecords,
+        assignments: formattedAssignments,
+        ministries: formattedMinistries,
+        languages: formattedLanguages,
+        documents: formattedDocuments,
       },
     })
 
@@ -105,39 +165,6 @@ export async function POST(req: NextRequest, context: RouteContext) {
         data: { name: actualFullName },
       })
     }
-
-    await prisma.$transaction([
-      prisma.academicRecord.deleteMany({ where: { profileId: id } }),
-      prisma.pastoralAssignment.deleteMany({ where: { profileId: id } }),
-      prisma.otherMinistry.deleteMany({ where: { profileId: id } }),
-      prisma.languageProficiency.deleteMany({ where: { profileId: id } }),
-      prisma.clergyDocument.deleteMany({ where: { profileId: id } }),
-      ...academicRecords.filter((r: any) => r && r.institution).map((r: any) =>
-        prisma.academicRecord.create({
-          data: { profileId: id, level: r.level, institution: r.institution, degree: r.degree, fieldOfStudy: r.fieldOfStudy, startYear: r.startYear, endYear: r.endYear, country: r.country },
-        })
-      ),
-      ...(Array.isArray(assignments) ? assignments : []).filter((r: any) => r && r.parish).map((r: any) =>
-        prisma.pastoralAssignment.create({
-          data: { profileId: id, parish: r.parish, diocese: r.diocese, role: r.role, startDate: r.startDate, endDate: r.endDate, isCurrent: !!r.isCurrent },
-        })
-      ),
-      ...(Array.isArray(ministries) ? ministries : []).filter((r: any) => r && r.title).map((r: any) =>
-        prisma.otherMinistry.create({
-          data: { profileId: id, title: r.title, organization: r.organization, description: r.description, startDate: r.startDate, endDate: r.endDate },
-        })
-      ),
-      ...(Array.isArray(languages) ? languages : []).filter((r: any) => r && r.language).map((r: any) =>
-        prisma.languageProficiency.create({
-          data: { profileId: id, language: r.language, spoken: r.spoken || 'Basic', written: r.written || 'Basic' },
-        })
-      ),
-      ...(Array.isArray(documents) ? documents : []).filter((r: any) => r && r.name).map((r: any) =>
-        prisma.clergyDocument.create({
-          data: { profileId: id, name: r.name, type: r.type || 'Other', uploadDate: r.uploadDate || '', fileSize: r.fileSize || '' },
-        })
-      ),
-    ])
 
     return NextResponse.json({ success: true, profile: updated })
   } catch (error) {
@@ -158,11 +185,6 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
     if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
 
     await prisma.$transaction([
-      prisma.academicRecord.deleteMany({ where: { profileId: id } }),
-      prisma.pastoralAssignment.deleteMany({ where: { profileId: id } }),
-      prisma.otherMinistry.deleteMany({ where: { profileId: id } }),
-      prisma.languageProficiency.deleteMany({ where: { profileId: id } }),
-      prisma.clergyDocument.deleteMany({ where: { profileId: id } }),
       prisma.profileReview.deleteMany({ where: { profileId: id } }),
       prisma.invitation.deleteMany({ where: { userId: profile.userId } }),
       prisma.passwordResetToken.deleteMany({ where: { userId: profile.userId } }),

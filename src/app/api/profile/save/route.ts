@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser, getUser } from '@/lib/auth'
+import { isUploadedClergyDocumentList } from '@/lib/clergy-documents'
 
 export async function POST(req: NextRequest) {
   try {
@@ -32,82 +33,100 @@ export async function POST(req: NextRequest) {
       ordinationBishop,
       diaconate,
       additionalNotes,
+      biography,
       academicRecords = [],
       assignments = [],
       ministries = [],
+      documents = [],
     } = body
 
-    // Upsert base profile
+    if (!isUploadedClergyDocumentList(documents)) {
+      return NextResponse.json({ error: 'Documents must be PDF or image files up to 4 MB' }, { status: 413 })
+    }
+
+    const formattedAcademicRecords = (Array.isArray(academicRecords) ? academicRecords : [])
+      .filter((r: any) => r && r.institution)
+      .map((r: any) => ({
+        level: r.level || null,
+        institution: r.institution,
+        degree: r.degree || '',
+        fieldOfStudy: r.fieldOfStudy || null,
+        startYear: r.startYear || null,
+        endYear: r.endYear || null,
+        country: r.country || null,
+      }))
+
+    const formattedAssignments = (Array.isArray(assignments) ? assignments : [])
+      .filter((r: any) => r && r.parish)
+      .map((r: any) => ({
+        parish: r.parish,
+        diocese: r.diocese || null,
+        role: r.role || '',
+        startDate: r.startDate || null,
+        endDate: r.endDate || null,
+        isCurrent: !!r.isCurrent,
+      }))
+
+    const formattedMinistries = (Array.isArray(ministries) ? ministries : [])
+      .filter((r: any) => r && r.title)
+      .map((r: any) => ({
+        title: r.title,
+        organization: r.organization || null,
+        description: r.description || null,
+        startDate: r.startDate || null,
+        endDate: r.endDate || null,
+      }))
+
+    const formattedDocuments = (Array.isArray(documents) ? documents : [])
+      .filter((d: any) => d && d.name)
+      .map((d: any) => ({
+        name: d.name,
+        type: d.type || 'Other',
+        uploadDate: d.uploadDate || '',
+        fileSize: d.fileSize || '',
+        originalName: d.originalName || null,
+        contentType: d.contentType || null,
+        fileUrl: d.fileUrl || null,
+        contentData: d.contentData || null,
+      }))
+
+    const profileData = {
+      updatedAt: new Date(),
+      firstName,
+      middleName,
+      lastName,
+      dateOfBirth,
+      placeOfBirth,
+      nationality,
+      diocese,
+      phoneNumber,
+      photoUrl,
+      baptismDate,
+      baptismParish,
+      confirmationDate,
+      confirmationParish,
+      religiousCongregation,
+      dateOfOrdination,
+      placeOfOrdination,
+      ordinationBishop,
+      diaconate,
+      additionalNotes,
+      biography,
+      academicRecords: formattedAcademicRecords,
+      assignments: formattedAssignments,
+      ministries: formattedMinistries,
+      documents: formattedDocuments,
+    }
+
     const profile = await prisma.priestProfile.upsert({
       where: { userId: user.id },
-      update: {
-        updatedAt: new Date(),
-        firstName,
-        middleName,
-        lastName,
-        dateOfBirth,
-        placeOfBirth,
-        nationality,
-        diocese,
-        phoneNumber,
-        photoUrl,
-        baptismDate,
-        baptismParish,
-        confirmationDate,
-        confirmationParish,
-        religiousCongregation,
-        dateOfOrdination,
-        placeOfOrdination,
-        ordinationBishop,
-        diaconate,
-        additionalNotes,
-      },
+      update: profileData,
       create: {
         userId: user.id,
         status: 'DRAFT',
-        firstName,
-        middleName,
-        lastName,
-        dateOfBirth,
-        placeOfBirth,
-        nationality,
-        diocese,
-        phoneNumber,
-        photoUrl,
-        baptismDate,
-        baptismParish,
-        confirmationDate,
-        confirmationParish,
-        religiousCongregation,
-        dateOfOrdination,
-        placeOfOrdination,
-        ordinationBishop,
-        diaconate,
-        additionalNotes,
+        ...profileData,
       },
     })
-
-    // Replace nested records
-    await prisma.$transaction([
-      prisma.academicRecord.deleteMany({ where: { profileId: profile.id } }),
-      prisma.pastoralAssignment.deleteMany({ where: { profileId: profile.id } }),
-      prisma.otherMinistry.deleteMany({ where: { profileId: profile.id } }),
-      ...academicRecords.filter((r: any) => r && r.institution).map((r: any) =>
-        prisma.academicRecord.create({
-          data: { profileId: profile.id, level: r.level, institution: r.institution, degree: r.degree, fieldOfStudy: r.fieldOfStudy, startYear: r.startYear, endYear: r.endYear, country: r.country },
-        })
-      ),
-      ...(Array.isArray(assignments) ? assignments : []).filter((r: any) => r && r.parish).map((r: any) =>
-        prisma.pastoralAssignment.create({
-          data: { profileId: profile.id, parish: r.parish, diocese: r.diocese, role: r.role, startDate: r.startDate, endDate: r.endDate, isCurrent: !!r.isCurrent },
-        })
-      ),
-      ...(Array.isArray(ministries) ? ministries : []).filter((r: any) => r && r.title).map((r: any) =>
-        prisma.otherMinistry.create({
-          data: { profileId: profile.id, title: r.title, organization: r.organization, description: r.description, startDate: r.startDate, endDate: r.endDate },
-        })
-      ),
-    ])
 
     return NextResponse.json({ success: true, profileId: profile.id })
   } catch (error) {

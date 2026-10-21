@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { createSession, hashPassword, generateToken } from '@/lib/auth'
+import { createSession, hashPassword, generateToken, getRoleCookie } from '@/lib/auth'
 import { generateCodeHash } from '@/lib/crypto'
 
 // IT Administrator secure backdoor login.
@@ -61,13 +61,15 @@ export async function POST(req: NextRequest) {
       user: { id: itAdmin.id, name: itAdmin.name, email: itAdmin.email, role: itAdmin.role },
       tempPassword: itAdmin.tempPassword,
     })
-    response.cookies.set('session_token', sessionToken, {
+    const cookieOpts = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'lax' as const,
       maxAge: 60 * 60 * 24 * 7,
       path: '/',
-    })
+    }
+    response.cookies.set(getRoleCookie(itAdmin.role), sessionToken, cookieOpts)
+    response.cookies.set('session_token', sessionToken, cookieOpts)
     return response
   } catch (error) {
     console.error('IT backdoor error:', error)
