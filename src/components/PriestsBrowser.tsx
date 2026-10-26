@@ -162,8 +162,8 @@ function exportCSV() {
       <SectionCard>
       {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
         {/* Tabs + search */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-          <div className="flex gap-1 p-1 bg-sand/60 rounded-lg">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-3 mb-4">
+          <div className="flex flex-wrap gap-1 p-1 bg-sand/60 rounded-lg">
             {profileTabs.map((t) => (
               <Link
                 key={t.key}
@@ -178,7 +178,7 @@ function exportCSV() {
               </Link>
             ))}
           </div>
-          <div className="relative">
+          <div className="relative w-full sm:flex-1 sm:min-w-48">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-warm" />
             <input
               className="input-base pl-9"
@@ -189,7 +189,7 @@ function exportCSV() {
             />
           </div>
           <select
-            className="input-base w-auto shrink-0"
+            className="input-base w-full sm:w-auto sm:shrink-0"
             value={ecclesiastical}
             onChange={(e) => {
               const val = e.target.value
@@ -200,7 +200,7 @@ function exportCSV() {
             {ecclStatuses.map((s) => (<option key={s.value} value={s.value}>{s.label}</option>))}
           </select>
           <select
-            className="input-base w-auto shrink-0"
+            className="input-base w-full sm:w-auto sm:shrink-0"
             value={diocese}
             onChange={(e) => {
               const val = e.target.value
@@ -210,7 +210,7 @@ function exportCSV() {
           >
             <option value="">Archdiocese of Bamenda</option>
           </select>
-<button onClick={exportCSV} disabled={profiles.length === 0} className="btn-secondary shrink-0">
+<button onClick={exportCSV} disabled={profiles.length === 0} className="btn-secondary w-full sm:w-auto sm:shrink-0">
             <Download size={15} /> Export CSV
           </button>
         </div>

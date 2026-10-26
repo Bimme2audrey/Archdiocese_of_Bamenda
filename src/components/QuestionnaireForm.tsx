@@ -345,7 +345,7 @@ export default function QuestionnaireForm({ role }: { role: string }) {
         </div>
       )}
 
-      <div className="card card-shadow p-6 lg:p-8">
+      <div className="card card-shadow p-4 sm:p-6 lg:p-8">
         {current === 'personal' && (
           <div className="space-y-5">
             <p className="section-title">Personal Information</p>

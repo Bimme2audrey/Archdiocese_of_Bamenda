@@ -39,7 +39,7 @@ export default async function AppShell({
   return (
     <div className="min-h-screen bg-cream flex flex-col lg:flex-row">
       <Sidebar user={{ name: profileName, email: user.email, role: user.role, photoUrl: profilePhoto }} />
-      <main className="flex-1 min-w-0 p-6 lg:p-8">{children}</main>
+      <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">{children}</main>
     </div>
   )
 }

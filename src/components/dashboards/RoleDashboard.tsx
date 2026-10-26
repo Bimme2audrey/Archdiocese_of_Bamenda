@@ -12,9 +12,9 @@ import { MONTHS, parseDateParts, getJubileeLabel, calculateAge } from '@/lib/uti
 
 function StatCard({ label, value, icon: Icon, color }: { label: string; value: number | string; icon: React.ElementType; color: string }) {
   return (
-    <div className="card card-shadow p-5">
+    <div className="card card-shadow p-4 sm:p-5">
       <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${color} mb-3`}><Icon size={19} /></div>
-      <p className="text-3xl font-bold">{value}</p>
+      <p className="text-2xl sm:text-3xl font-bold">{value}</p>
       <p className="text-sm text-stone-warm mt-1">{label}</p>
     </div>
   )
@@ -37,7 +37,7 @@ export default async function RoleDashboard({ user }: { user: { id: string; role
     return (<>
       <PageHeader title="System Administration" subtitle="User account management & access control" action={<RoleBadge role="IT_ADMIN" />} />
       <div className="space-y-6">
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <StatCard label="Total Users" value={totalUsers} icon={Users} color="bg-burgundy text-gold-light" />
           <StatCard label="Active Admins" value={activeAdmins} icon={ShieldCheck} color="bg-indigo-100 text-indigo-700" />
           <StatCard label="Active Priests" value={activePriests} icon={Church} color="bg-emerald-100 text-emerald-700" />
@@ -79,13 +79,13 @@ export default async function RoleDashboard({ user }: { user: { id: string; role
     return (<>
       <PageHeader title="ADP Administration" subtitle="Active Presbyterate Overview & Chancery Management" action={<RoleBadge role="ADP_ADMIN" />} />
       <div className="space-y-6">
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <StatCard label="Active Presbyterate" value={active.length} icon={Users} color="bg-burgundy text-gold-light" />
           <StatCard label="Average Clergy Age" value={avgAge} icon={TrendingUp} color="bg-emerald-100 text-emerald-700" />
           <StatCard label="Retirement Ready (70+)" value={retirementEligible.length + nearRetirement.length} icon={Clock} color="bg-amber-100 text-amber-700" />
           <StatCard label="Necrology Record" value={deceased.length} icon={Flame} color="bg-purple-100 text-purple-700" />
         </div>
-        <div className="grid sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
           <div className="card card-shadow p-4"><p className="text-xs text-stone-warm">Approved Profiles</p><p className="text-2xl font-bold text-emerald-700">{approved}</p></div>
           <div className="card card-shadow p-4"><p className="text-xs text-stone-warm">Pending Review</p><p className="text-2xl font-bold text-amber-700">{pending}</p></div>
           <div className="card card-shadow p-4"><p className="text-xs text-stone-warm">Rejected</p><p className="text-2xl font-bold text-red-700">{rejected}</p></div>
@@ -133,7 +133,7 @@ export default async function RoleDashboard({ user }: { user: { id: string; role
     <>
       <PageHeader title="My Dashboard" subtitle="Build and maintain your official clergy profile" action={<RoleBadge role="PRIEST" />} />
       <div className="max-w-3xl">
-        <div className="card card-shadow p-8">
+        <div className="card card-shadow p-5 sm:p-8">
           <div className="flex flex-col sm:flex-row sm:items-center gap-5">
             <div className="flex items-center gap-4">
               <ClergyAvatar
@@ -154,7 +154,7 @@ export default async function RoleDashboard({ user }: { user: { id: string; role
             <p className="text-sm text-stone-warm leading-relaxed mb-4">Complete your structured questionnaire to build your official digital profile. Your profile becomes fully active only after review and approval by ADP administrators.</p>
           </div>
           <div className="flex items-center gap-3 mt-2">
-            <Link href="/priest/questionnaire" className="btn-primary"><GraduationCap size={16} /> {myProfile && myProfile.status !== 'DRAFT' ? 'View / Edit My Profile' : 'Complete My Questionnaire'}</Link>
+            <Link href="/priest/questionnaire" className="btn-primary w-full sm:w-auto"><GraduationCap size={16} /> {myProfile && myProfile.status !== 'DRAFT' ? 'View / Edit My Profile' : 'Complete My Questionnaire'}</Link>
           </div>
         </div>
         <div className="mt-6"><AnnouncementsCard role="PRIEST" /></div>
